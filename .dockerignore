@@ -1,0 +1,21 @@
+# Ignore the git repository history
+.git
+
+# Ignore Docker-related files
+Dockerfile
+.dockerignore
+
+# Ignore IDE/editor configuration
+.vscode/
+.idea/
+
+# Ignore Python virtual environments
+venv/
+*.pyc
+__pycache__/
+
+# Ignore files generated when bulding the dev image
+macronizer.db
+rftagger-ldt.model
+lemmas.py
+macronized_endings.py

@@ -1,0 +1,20 @@
+# docker-compose.yml
+services:
+  app:
+
+    # Use final, pre-built image (after training is complete)
+    # Example: whothefluff/latin-macronizer:dev-env-v1-alatius-treebank-v1
+    image: whothefluff/latin-macronizer:dev-env-v1-alatius-treebank-v1
+
+    # Map the debug port.
+    ports:
+      - "5678:5678"
+
+    # The command directly runs the debugger with the venv's python.
+    command: >
+      python -m debugpy --wait-for-client --listen 0.0.0.0:5678 macronize.py
+
+    # Mount the local source code into the container to see changes live.
+    # Necessary to access image generated files during debugging.
+    volumes:
+      - .:/app
