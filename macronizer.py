@@ -1062,7 +1062,9 @@ class Tokenization:
 
 class Macronizer:
 
-    dactylichexameter = {
+    ScansionRules = dict[tuple[int, str], tuple[int, str, int]]
+
+    dactylichexameter: ScansionRules = {
         (0, "L"): (1, "", 0),
         (0, "S"): (-1, "", 0),
         (1, "L"): (3, "S", 0),
@@ -1099,7 +1101,7 @@ class Macronizer:
         (16, "S"): (0, "T", 0),
     }
 
-    dactylicpentameter = {
+    dactylicpentameter: ScansionRules = {
         (0, "L"): (1, "", 0),
         (0, "S"): (-1, "", 0),
         (1, "L"): (3, "S", 0),
@@ -1130,7 +1132,7 @@ class Macronizer:
         (13, "S"): (0, "-", 0),
     }
 
-    hendecasyllable = {
+    hendecasyllable: ScansionRules = {
         (0, "L"): (1, "-", 0),
         (0, "S"): (1, "u", 0),
         (1, "L"): (2, "-", 0),
@@ -1155,7 +1157,7 @@ class Macronizer:
         (10, "S"): (0, "u", 0),
     }
 
-    iambictrimeter = {
+    iambictrimeter: ScansionRules = {
         (0, "L"): (3, "-", 0),
         (0, "S"): (1, "u", 0),
         (1, "L"): (5, "-|", 0),
@@ -1202,7 +1204,7 @@ class Macronizer:
         (20, "S"): (0, "u", 0),
     }
 
-    iambicdimeter = {
+    iambicdimeter: ScansionRules = {
         (0, "L"): (3, "-", 0),
         (0, "S"): (1, "u", 0),
         (1, "L"): (5, "-|", 0),

@@ -4,6 +4,7 @@
 import pprint
 import xml.etree.ElementTree as ET
 from collections import defaultdict
+from typing import DefaultDict, List, Tuple
 
 import postags
 
@@ -26,7 +27,7 @@ with open("macrons.txt", "r", encoding="utf-8") as macrons_file, open(
 with open("macronized_endings.py", "w", encoding="utf-8") as endings_file:
     endings_file.write("tag_to_endings = {\n")
     for tag in sorted(tag_to_accents):
-        ending_freqs = defaultdict(int)
+        ending_freqs: DefaultDict[str, int] = defaultdict(int)
         for accented in tag_to_accents[tag]:
             for i in range(1, min(len(accented) - 3, 12)):
                 ending = accented[-i:]
@@ -92,9 +93,9 @@ with open("ldt-corpus.txt", "w", encoding="utf-8") as pos_corpus_file:
             pos_corpus_file.write(line)
 
 
-lemma_frequency = defaultdict(int)
-word_lemma_freq = defaultdict(int)
-wordform_to_corpus_lemmas = defaultdict(list)
+lemma_frequency: DefaultDict[str, int] = defaultdict(int)
+word_lemma_freq: DefaultDict[Tuple[str, str], int] = defaultdict(int)
+wordform_to_corpus_lemmas: DefaultDict[str, List[str]] = defaultdict(list)
 with open("ldt-corpus.txt", "r", encoding="utf-8") as pos_corpus_file:
     for line in pos_corpus_file:
         if "\t" in line:

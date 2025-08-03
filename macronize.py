@@ -22,6 +22,7 @@ import cgi
 import codecs
 import os
 import sys
+from typing import List, Tuple
 
 sys.path.append(MACRONIZER_LIB)
 import argparse
@@ -29,15 +30,15 @@ import unicodedata
 
 from macronizer import Macronizer, evaluate
 
-SCANSIONS = [
-    ["prose (no scansion)", []],
-    ["dactylic hexameters", [Macronizer.dactylichexameter]],
-    ["elegiac distichs", [Macronizer.dactylichexameter, Macronizer.dactylicpentameter]],
-    ["hendecasyllables", [Macronizer.hendecasyllable]],
-    [
+SCANSIONS: List[Tuple[str, List[Macronizer.ScansionRules]]] = [
+    ("prose (no scansion)", []),
+    ("dactylic hexameters", [Macronizer.dactylichexameter]),
+    ("elegiac distichs", [Macronizer.dactylichexameter, Macronizer.dactylicpentameter]),
+    ("hendecasyllables", [Macronizer.hendecasyllable]),
+    (
         "iambic trimeter + dimeter",
         [Macronizer.iambictrimeter, Macronizer.iambicdimeter],
-    ],
+    ),
 ]
 TRUNCATETHRESHOLD = 50000  # Set to -1 to disable
 DEBUGCOMMAND = "DEBUG\n"
