@@ -24,6 +24,8 @@ from html import escape
 from tempfile import mkstemp
 
 import postags
+from lemmas import lemma_frequency, word_lemma_freq, wordform_to_corpus_lemmas
+from macronized_endings import tag_to_endings
 
 USE_DB = True
 DB_NAME = "macronizer.db"
@@ -156,7 +158,7 @@ class Wordlist:
             )  # Try to parse unseen words with Morpheus, and add result to the database
             for word in unseenwords:
                 if not self.loadwordfromdb(word):
-                    raise DatabaseError("Could not store %s in the database." % word)
+                    raise DatabaseError(f"Could not store {word} in the database.")
 
     # enddef
 
@@ -201,14 +203,11 @@ class Wordlist:
             for word in words:
                 morphinpfile.write(word.strip().lower() + "\n")
                 morphinpfile.write(word.strip().capitalize() + "\n")
-        morpheus_command = (
-            "MORPHLIB=%s/stemlib %s/bin/cruncher -L < %s > %s 2> /dev/null"
-            % (MORPHEUS_DIR, MORPHEUS_DIR, morphinpfname, crunchedfname)
-        )
+        morpheus_command = f"MORPHLIB={MORPHEUS_DIR}/stemlib {MORPHEUS_DIR}/bin/cruncher -L < {morphinpfname} > {crunchedfname} 2> /dev/null"
         exitcode = os.system(morpheus_command)
         if exitcode != 0:
             raise ExternalDependencyError(
-                "Failed to execute Morpheus command: %s" % morpheus_command
+                f"Failed to execute Morpheus command: {morpheus_command}"
             )
         os.remove(morphinpfname)
         with open(crunchedfname, "r", encoding="utf-8") as crunchedfile:
@@ -618,16 +617,11 @@ class Tokenization:
                 if token.endssentence:
                     totaggerfile.write("\n")
         rftagger_model = os.path.join(os.path.dirname(__file__), "rftagger-ldt.model")
-        rft_command = "%s/rft-annotate -s -q %s %s %s" % (
-            RFTAGGER_DIR,
-            rftagger_model,
-            totaggerfname,
-            fromtaggerfname,
-        )
+        rft_command = f"{RFTAGGER_DIR}/rft-annotate -s -q {rftagger_model} {totaggerfname} {fromtaggerfname}"
         exitcode = os.system(rft_command)
         if exitcode != 0:
             raise ExternalDependencyError(
-                "Failed to execute RFTagger command: %s" % rft_command
+                f"Failed to execute RFTagger command: {rft_command}"
             )
         with open(fromtaggerfname, "r", encoding="utf-8") as fromtaggerfile:
             (taggedenclititoken, enclitictag) = (None, None)
@@ -655,11 +649,8 @@ class Tokenization:
                             assert taggedtoken == toascii(token.text)
                     except AssertionError as exc:
                         raise ParsingError(
-                            "Error: Could not handle tagging data in file %s:\n'%s'"
-                            % (
-                                fromtaggerfname,
-                                "Premature End Of File." if not line else line,
-                            )
+                            f"Error: Could not handle tagging data in file {fromtaggerfname}:\n"
+                            f"'{'Premature End Of File.' if not line else line}'"
                         ) from exc
                     # endtry
                     token.tag = tag.replace(".", "")
@@ -671,7 +662,6 @@ class Tokenization:
     # enddef
 
     def addlemmas(self, wordlist):
-        from lemmas import lemma_frequency, word_lemma_freq, wordform_to_corpus_lemmas
 
         for token in self.tokens:
             wordform = toascii(token.text)
@@ -696,7 +686,7 @@ class Tokenization:
 
         def levenshtein(s1, s2):
             if len(s1) < len(s2):
-                return levenshtein(s2, s1) # pylint: disable=arguments-out-of-order
+                return levenshtein(s2, s1)  # pylint: disable=arguments-out-of-order
             if len(s2) == 0:
                 return len(s1)
             previous_row = range(len(s2) + 1)
@@ -711,8 +701,6 @@ class Tokenization:
             return previous_row[-1]
 
         # enddef
-
-        from macronized_endings import tag_to_endings
 
         for token in self.tokens:
             if not token.isword:
@@ -1065,11 +1053,11 @@ class Tokenization:
                         r"([āēīōūȳĀĒĪŌŪȲaeiouyAEIOUY])", "<span>\\1</span>", unicodetext
                     )
                     if token.isunknown:
-                        unicodetext = '<span class="unknown">%s</span>' % unicodetext
+                        unicodetext = f'<span class="unknown">{unicodetext}</span>'
                     elif len(set([x.replace("^", "") for x in token.accented])) > 1:
-                        unicodetext = '<span class="ambig">%s</span>' % unicodetext
+                        unicodetext = f'<span class="ambig">{unicodetext}</span>'
                     else:
-                        unicodetext = '<span class="auto">%s</span>' % unicodetext
+                        unicodetext = f'<span class="auto">{unicodetext}</span>'
                 result.append(unicodetext)
             else:
                 if markambiguous:
@@ -1332,7 +1320,7 @@ def evaluate(goldstandard, macronizedtext):
         if toascii(touiorthography(a)) == toascii(touiorthography(b)):
             outtext.append(escape(b))
         else:
-            outtext.append('<span class="wrong">%s</span>' % b)
+            outtext.append(f'<span class="wrong">{b}</span>')
     return lengthcorrect / float(vowelcount), "".join(outtext)
 
 

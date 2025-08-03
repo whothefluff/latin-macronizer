@@ -21,7 +21,7 @@ with open("macrons.txt", "r", encoding="utf-8") as macrons_file, open(
         if accented[0].isupper():
             wordform = wordform.title()
         tag = ".".join(list(tag))
-        lexicon_file.write("%s\t%s\t%s\n" % (wordform, tag, lemma))
+        lexicon_file.write(f"{wordform}\t{tag}\t{lemma}\n")
 
 
 with open("macronized_endings.py", "w", encoding="utf-8") as endings_file:
@@ -43,7 +43,7 @@ with open("macronized_endings.py", "w", encoding="utf-8") as endings_file:
             str(postags.escape_macrons(ending))
             for ending in sorted(relevant_endings, key=lambda x: (-len(x), x))
         ]
-        endings_file.write("  '%s': %s,\n" % (str(tag), cleaned_list))
+        endings_file.write(f"  '{tag}': {cleaned_list},\n")
     endings_file.write("}\n")
 
 
@@ -60,7 +60,7 @@ with open("ldt-corpus.txt", "w", encoding="utf-8") as pos_corpus_file:
         "phi0959.phi006.perseus-lat1",
         "phi0690.phi003.perseus-lat1",
     ]:
-        bank = ET.parse("treebank_data/v1.6/latin/data/%s.tb.xml" % f)
+        bank = ET.parse(f"treebank_data/v1.6/latin/data/{f}.tb.xml")
         for sentence in bank.getroot():
             for token in sentence.findall("word"):
                 idnum = int(token.get("id", "_"))
@@ -83,7 +83,7 @@ with open("ldt-corpus.txt", "w", encoding="utf-8") as pos_corpus_file:
                     postag = ".".join(list(postag))
                     lemma = lemma.replace("#", "").replace("1", "").replace(" ", "+")
                     word = xsegment + form + xsegmentbehind
-                    pos_corpus_file.write("%s\t%s\t%s\n" % (word, postag, lemma))
+                    pos_corpus_file.write(f"{word}\t{postag}\t{lemma}\n")
                     xsegment = ""
                     xsegmentbehind = ""
             pos_corpus_file.write(".\tu.-.-.-.-.-.-.-.-\tPERIOD1\n")
@@ -107,8 +107,8 @@ with open("ldt-corpus.txt", "r", encoding="utf-8") as pos_corpus_file:
             if lemma not in wordform_to_corpus_lemmas[wordform]:
                 wordform_to_corpus_lemmas[wordform].append(lemma)
 with open("lemmas.py", "w", encoding="utf-8") as lemma_file:
-    lemma_file.write("lemma_frequency = %s\n" % pp.pformat(dict(lemma_frequency)))
-    lemma_file.write("word_lemma_freq = %s\n" % pp.pformat(dict(word_lemma_freq)))
+    lemma_file.write(f"lemma_frequency = {pp.pformat(dict(lemma_frequency))}\n")
+    lemma_file.write(f"word_lemma_freq = {pp.pformat(dict(word_lemma_freq))}\n")
     lemma_file.write(
-        "wordform_to_corpus_lemmas = %s\n" % pp.pformat(dict(wordform_to_corpus_lemmas))
+        f"wordform_to_corpus_lemmas = {pp.pformat(dict(wordform_to_corpus_lemmas))}\n"
     )

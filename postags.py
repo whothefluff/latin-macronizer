@@ -810,20 +810,19 @@ def parse_to_proiel_tag(parse):
 
 
 def parses_to_proiel_tags(parses):
-    
+
     tags = []
-    
+
     for parse in parses:
         tags.append(parse_to_proiel_tag(parse))
-    
+
     tagswithgender = {}
     for tag in tags:
         withoutgender = tag[0:7] + tag[8:12]
         tagswithgender[withoutgender] = tagswithgender.get(withoutgender, set()) | {
             tag[7]
         }
-    for withoutgender in tagswithgender:
-        genders = tagswithgender[withoutgender]
+    for withoutgender, genders in tagswithgender.items():
         if "m" in genders and "n" in genders:
             tags.append(withoutgender[0:7] + "o" + withoutgender[7:11])
         if "m" in genders and "f" in genders:
@@ -832,7 +831,7 @@ def parses_to_proiel_tags(parses):
             tags.append(withoutgender[0:7] + "q" + withoutgender[7:11])
         if "f" in genders and "n" in genders:
             tags.append(withoutgender[0:7] + "r" + withoutgender[7:11])
-    
+
     new_tags = []
     for tag in tags:
         if tag[0:2] == "Df":
@@ -843,16 +842,18 @@ def parses_to_proiel_tags(parses):
         elif tag[0:2] == "Ma":
             new_tags.append("Mo" + tag[2:])
         elif tag[0:2] == "Pp":
-            new_tags.extend([
-                "Pc" + tag[2:],
-                "Pd" + tag[2:],
-                "Pi" + tag[2:],
-                "Pk" + tag[2:],
-                "Pr" + tag[2:],
-                "Ps" + tag[2:],
-                "Pt" + tag[2:],
-                "Px" + tag[2:],
-            ])
+            new_tags.extend(
+                [
+                    "Pc" + tag[2:],
+                    "Pd" + tag[2:],
+                    "Pi" + tag[2:],
+                    "Pk" + tag[2:],
+                    "Pr" + tag[2:],
+                    "Ps" + tag[2:],
+                    "Pt" + tag[2:],
+                    "Px" + tag[2:],
+                ]
+            )
         elif tag[0:2] == "Nb":
             new_tags.append("Ne" + tag[2:])
         # elif tag[0:8] == "V--s-g-m":
@@ -865,9 +866,9 @@ def parses_to_proiel_tags(parses):
         #     tags.append("A--s---"+tag[7:9]+"p-i")
         # elif tag[0:7] == "V--prpp":
         #     tags.append("A--p---"+tag[7:9]+"p-i")
-    
+
     tags.extend(new_tags)
-    
+
     return tags
 
 
@@ -900,14 +901,12 @@ def tag_distance(tag1, tag2):
     bothnomenbutdifferent = False
     if is_nomen(tag1) and is_nomen(tag2) and tag1[0] != tag2[0]:
         bothnomenbutdifferent = True
-    for i in range(0, len(tag1)):
-        if bothnomenbutdifferent and (
-            len(tag1) == 9 and i in [3, 4, 5] or len(tag1) == 12 and i in [4, 5, 6]
-        ):
-            continue
-        else:
-            if tag1[i] != tag2[i]:
-                dist += 1
+    for i, (char1, char2) in enumerate(zip(tag1, tag2)):
+        is_ignored_index = bothnomenbutdifferent and (
+            (len(tag1) == 9 and i in {3, 4, 5}) or (len(tag1) == 12 and i in {4, 5, 6})
+        )
+        if char1 != char2 and not is_ignored_index:
+            dist += 1
     return dist
 
 

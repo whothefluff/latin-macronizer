@@ -16,19 +16,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-MACRONIZER_LIB = "."
-
+import argparse
 import cgi
 import codecs
 import os
 import sys
+import unicodedata
 from typing import List, Tuple
 
-sys.path.append(MACRONIZER_LIB)
-import argparse
-import unicodedata
-
 from macronizer import Macronizer, evaluate
+
+MACRONIZER_LIB = "."
 
 SCANSIONS: List[Tuple[str, List[Macronizer.ScansionRules]]] = [
     ("prose (no scansion)", []),
@@ -42,6 +40,9 @@ SCANSIONS: List[Tuple[str, List[Macronizer.ScansionRules]]] = [
 ]
 TRUNCATETHRESHOLD = 50000  # Set to -1 to disable
 DEBUGCOMMAND = "DEBUG\n"
+
+
+sys.path.append(MACRONIZER_LIB)
 
 
 def create_html_page(
@@ -118,8 +119,7 @@ def create_html_page(
             "truncatewarning": (
                 ""
                 if TRUNCATETHRESHOLD < 0
-                else "<p>Note: In order to avoid time out from the server, input longer than %s characters will be truncated. Sorry about that!</p>"
-                % TRUNCATETHRESHOLD
+                else f"<p>Note: In order to avoid time out from the server, input longer than {TRUNCATETHRESHOLD} characters will be truncated. Sorry about that!</p>"
             ),
             "numrows": 20 if not texttomacronize else 3,
             "errormessage": errormessage,
@@ -127,8 +127,7 @@ def create_html_page(
             "alsomaius": "checked" if alsomaius else "",
             "scanoptions": "".join(
                 [
-                    '<option value="%i"%s>%s</option>'
-                    % (i, " selected" if scan == i else "", description)
+                    f'<option value="{i}"{" selected" if scan == i else ""}>{description}</option>'
                     for i, [description, _] in enumerate(SCANSIONS)
                 ]
             ),
@@ -145,23 +144,22 @@ def create_html_page(
         )
         if scan > 0:
             html.append(
-                '<div class="feet">%s</div>'
-                % "<br>".join(macronizer.tokenization.scannedfeet)
+                f'<div class="feet">{"<br>".join(macronizer.tokenization.scannedfeet)}</div>'
             )
         html.append(
-            '<div class="prewrap" id="selectme" contenteditable="true">%s</div>'
-            % macronizer.tokenization.detokenize(True)
+            f'<div class="prewrap" id="selectme" contenteditable="true">{macronizer.tokenization.detokenize(True)}</div>'
         )
         html.append('<p><input id="selecttext" type="button" value="Copy text"></p>')
 
         if doevaluate:
             html.append("<h2>Evaluation</h2>")
             (accuracy, evaluatedtext) = evaluate(texttomacronize, macronizedtext)
-            html.append('<div class="prewrap">%s</div>' % evaluatedtext)
-            html.append("<p>Accuracy: %f%%</p>" % (accuracy * 100))
+            html.append(f'<div class="prewrap">{evaluatedtext}</div>')
+            html.append(f"<p>Accuracy: {accuracy * 100}%</p>")
+
         if dodebug:
             html.append("<h2>Debug info</h2>")
-            html.append("<pre>%s</pre>" % macronizer.tokenization.show())
+            html.append(f"<pre>{macronizer.tokenization.show()}</pre>")
 
     html.append(
         """<h2>News</h2>
@@ -388,7 +386,7 @@ else:  # Run as a free-standing Python script
 
     if args.listscans:
         for i, [description, _] in enumerate(SCANSIONS):
-            print("%i: %s" % (i, description))
+            print(f"{i}: {description}")
         exit(0)
 
     macronizer = Macronizer()
@@ -417,7 +415,7 @@ else:  # Run as a free-standing Python script
     )
     if args.evaluate:
         (accuracy, _) = evaluate(texttomacronize, macronizedtext)
-        print("Accuracy: %f" % (accuracy * 100))
+        print(f"Accuracy: {accuracy * 100}")
     else:
         if args.outfile is None:
             if sys.version_info[0] < 3:
