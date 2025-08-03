@@ -810,9 +810,12 @@ def parse_to_proiel_tag(parse):
 
 
 def parses_to_proiel_tags(parses):
+    
     tags = []
+    
     for parse in parses:
         tags.append(parse_to_proiel_tag(parse))
+    
     tagswithgender = {}
     for tag in tags:
         withoutgender = tag[0:7] + tag[8:12]
@@ -829,25 +832,29 @@ def parses_to_proiel_tags(parses):
             tags.append(withoutgender[0:7] + "q" + withoutgender[7:11])
         if "f" in genders and "n" in genders:
             tags.append(withoutgender[0:7] + "r" + withoutgender[7:11])
+    
+    new_tags = []
     for tag in tags:
         if tag[0:2] == "Df":
             if tag == "Df---------n":
-                tags.append("Df-------p-i")
-            tags.append("Dq" + tag[2:])
-            tags.append("Du" + tag[2:])
+                new_tags.append("Df-------p-i")
+            new_tags.append("Dq" + tag[2:])
+            new_tags.append("Du" + tag[2:])
         elif tag[0:2] == "Ma":
-            tags.append("Mo" + tag[2:])
+            new_tags.append("Mo" + tag[2:])
         elif tag[0:2] == "Pp":
-            tags.append("Pc" + tag[2:])
-            tags.append("Pd" + tag[2:])
-            tags.append("Pi" + tag[2:])
-            tags.append("Pk" + tag[2:])
-            tags.append("Pr" + tag[2:])
-            tags.append("Ps" + tag[2:])
-            tags.append("Pt" + tag[2:])
-            tags.append("Px" + tag[2:])
+            new_tags.extend([
+                "Pc" + tag[2:],
+                "Pd" + tag[2:],
+                "Pi" + tag[2:],
+                "Pk" + tag[2:],
+                "Pr" + tag[2:],
+                "Ps" + tag[2:],
+                "Pt" + tag[2:],
+                "Px" + tag[2:],
+            ])
         elif tag[0:2] == "Nb":
-            tags.append("Ne" + tag[2:])
+            new_tags.append("Ne" + tag[2:])
         # elif tag[0:8] == "V--s-g-m":
         #     tags.append("V----d--"+tag[8:])
         # elif tag[0:7] == "V--sppa":
@@ -858,6 +865,9 @@ def parses_to_proiel_tags(parses):
         #     tags.append("A--s---"+tag[7:9]+"p-i")
         # elif tag[0:7] == "V--prpp":
         #     tags.append("A--p---"+tag[7:9]+"p-i")
+    
+    tags.extend(new_tags)
+    
     return tags
 
 
