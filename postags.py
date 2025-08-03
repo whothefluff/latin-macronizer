@@ -630,9 +630,9 @@ def morpheus_to_parses(wordform, nl):
         if code.count("/") > 0:
             code_components = code.split("/")
             new_parses = []
-            for existingParse in grouped_parses:
+            for existing_parse in grouped_parses:
                 for code_component in code_components:
-                    dup_parse = existingParse.copy()
+                    dup_parse = existing_parse.copy()
                     setfeature(dup_parse, code_component)
                     new_parses.append(dup_parse)
             grouped_parses = new_parses

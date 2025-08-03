@@ -290,8 +290,8 @@ class Token:
         self.accented = [""]
         self.macronized = ""
         self.text = postags.removemacrons(text)
-        self.isword = True if re.match(r"[^\W\d_]", text, flags=re.UNICODE) else False
-        self.isspace = True if re.match(r"\s", text, flags=re.UNICODE) else False
+        self.isword = bool(re.match(r"[^\W\d_]", text, flags=re.UNICODE))
+        self.isspace = bool(re.match(r"\s", text, flags=re.UNICODE))
         self.hasenclitic = False
         self.isenclitic = False
         self.startssentence = False
@@ -417,6 +417,14 @@ class Token:
 
 
 class Tokenization:
+
+    REPRIORITIZE_PENALTY = 1
+    MUTA_CUM_LIQUIDA_PENALTY = 1
+    DIAERESIS_PENALTY = 2
+    NO_SYNEZIS_PENALTY = 2  # in the context s or ng + u + vowel
+    SYNEZIS_PENALTY = 3
+    HIATUS_PENALTY = 3
+
     def __init__(self, text):
         self.tokens = []
         possiblesentenceend = False
@@ -843,18 +851,12 @@ class Tokenization:
             muta cum liquida, diphthong vs. diaeresis, elision, etc.
             input: followingsegment is one of ["V", "C", "CC", "#"]
             returns: [(penalty, scansion, accented), ...]"""
-            REPRIORITIZEPENALTY = 1
-            MUTACUMLIQUIDAPENALTY = 1
-            DIAERESISPENALTY = 2
-            NOSYNEZISPENALTY = 2  # in the context s or ng + u + vowel
-            SYNEZISPENALTY = 3
-            HIATUSPENALTY = 3
             isfirstaccented = True
             scans = []
             for accented in separate_ambiguous_vowels(accentedcandidates):
                 segments = segmentaccented(accented)
                 segments.append(followingsegment)
-                basepenalty = 0 if isfirstaccented else REPRIORITIZEPENALTY
+                basepenalty = 0 if isfirstaccented else self.REPRIORITIZE_PENALTY
                 temps = [(basepenalty, "")]
                 for i, thisseg in enumerate(segments):
                     prevseg = "#" if i == 0 else segments[i - 1]
@@ -868,7 +870,10 @@ class Tokenization:
                         elif thisseg in ["ae", "au", "ei", "oe", "eu"]:
                             news.append((penaltysofar, scansofar + "L"))
                             news.append(
-                                (penaltysofar + DIAERESISPENALTY, scansofar + "VV")
+                                (
+                                    penaltysofar + self.DIAERESIS_PENALTY,
+                                    scansofar + "VV",
+                                )
                             )
                         elif (
                             (prevseg.endswith("s") or prevseg.endswith("ng"))
@@ -877,14 +882,17 @@ class Tokenization:
                         ):
                             news.append((penaltysofar, scansofar + "C"))
                             news.append(
-                                (penaltysofar + NOSYNEZISPENALTY, scansofar + "V")
+                                (
+                                    penaltysofar + self.NO_SYNEZIS_PENALTY,
+                                    scansofar + "V",
+                                )
                             )
                         elif thisseg[0] in "ui" and (
                             nextseg[0] in "aeiouy" or prevseg[0] in "aeiouy"
                         ):
                             news.append((penaltysofar, scansofar + "V"))
                             news.append(
-                                (penaltysofar + SYNEZISPENALTY, scansofar + "C")
+                                (penaltysofar + self.SYNEZIS_PENALTY, scansofar + "C")
                             )
                         elif thisseg[0] in "aeiouy":
                             news.append((penaltysofar, scansofar + "V"))
@@ -898,10 +906,14 @@ class Tokenization:
                         elif thisseg == "V":  # next word begins with vowel
                             if scansofar.endswith("V") or scansofar.endswith("L"):
                                 news.append((penaltysofar, scansofar[:-1]))
-                                news.append((penaltysofar + HIATUSPENALTY, scansofar))
+                                news.append(
+                                    (penaltysofar + self.HIATUS_PENALTY, scansofar)
+                                )
                             elif scansofar.endswith("M"):
                                 news.append((penaltysofar, scansofar[:-2]))
-                                news.append((penaltysofar + HIATUSPENALTY, scansofar))
+                                news.append(
+                                    (penaltysofar + self.HIATUS_PENALTY, scansofar)
+                                )
                             else:
                                 news.append((penaltysofar, scansofar))
                         elif thisseg == "#":
@@ -915,7 +927,10 @@ class Tokenization:
                         ):
                             news.append((penaltysofar, scansofar + "C"))
                             news.append(
-                                (penaltysofar + MUTACUMLIQUIDAPENALTY, scansofar + "CC")
+                                (
+                                    penaltysofar + self.MUTA_CUM_LIQUIDA_PENALTY,
+                                    scansofar + "CC",
+                                )
                             )
                         else:
                             news.append((penaltysofar, scansofar + "CC"))

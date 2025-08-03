@@ -305,23 +305,21 @@ def create_html_page(
     return "\n".join(html)
 
 
-if "REQUEST_METHOD" in os.environ:  # If run as a CGI script
+def main_cgi() -> None:
     print("Content-type:text/html\n\n")
 
     scriptname = os.environ["REQUEST_URI"].split("/")[-1]
     htmlform = cgi.FieldStorage()
     texttomacronize = htmlform.getvalue("textcontent", "")
-    domacronize = (
-        True if not texttomacronize or htmlform.getvalue("macronize") else False
-    )
-    alsomaius = True if htmlform.getvalue("alsomaius") else False
+    domacronize = bool(not texttomacronize or htmlform.getvalue("macronize"))
+    alsomaius = bool(htmlform.getvalue("alsomaius"))
     try:
         scan = int(htmlform.getvalue("scan"))
     except:
         scan = 0
-    performitoj = True if htmlform.getvalue("itoj") else False
-    performutov = True if htmlform.getvalue("utov") else False
-    doevaluate = True if htmlform.getvalue("doevaluate") else False
+    performitoj = bool(htmlform.getvalue("itoj"))
+    performutov = bool(htmlform.getvalue("utov"))
+    doevaluate = bool(htmlform.getvalue("doevaluate"))
 
     print(
         create_html_page(
@@ -336,7 +334,7 @@ if "REQUEST_METHOD" in os.environ:  # If run as a CGI script
         )
     )
 
-else:  # Run as a free-standing Python script
+def main_cli() -> None:
     parser = argparse.ArgumentParser()
     infile_group = parser.add_mutually_exclusive_group()
     infile_group.add_argument(
@@ -427,3 +425,9 @@ else:  # Run as a free-standing Python script
         outfile.write(macronizedtext)
     # endif
 # endif
+
+if __name__ == "__main__":
+    if "REQUEST_METHOD" in os.environ:
+        main_cgi() # If run as a CGI script
+    else:
+        main_cli() # Run as a free-standing Python script
