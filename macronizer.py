@@ -696,7 +696,7 @@ class Tokenization:
 
         def levenshtein(s1, s2):
             if len(s1) < len(s2):
-                return levenshtein(s2, s1)
+                return levenshtein(s2, s1) # pylint: disable=arguments-out-of-order
             if len(s2) == 0:
                 return len(s1)
             previous_row = range(len(s2) + 1)
@@ -991,7 +991,7 @@ class Tokenization:
                 return besttail, besttailfeet, besttailpenalty
 
             # enddef
-            indexaccentedpairs, feet, penalty = scanverserecurse(verse, 0, automaton, 0)
+            indexaccentedpairs, feet, _ = scanverserecurse(verse, 0, automaton, 0)
             return indexaccentedpairs, "".join(feet)
 
         # enddef
