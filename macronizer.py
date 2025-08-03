@@ -32,6 +32,26 @@ MORPHEUS_DIR = os.path.join(os.path.dirname(__file__), "morpheus")
 MACRONS_FILE = os.path.join(os.path.dirname(__file__), "macrons.txt")
 
 
+class MacronizerError(Exception):
+    """Base class for exceptions in this module."""
+
+
+class ExternalDependencyError(MacronizerError):
+    """Raised when an external tool (Morpheus, RFTagger) fails."""
+
+
+class DatabaseError(MacronizerError):
+    """Raised for database-related errors (missing table, etc.)."""
+
+
+class ParsingError(MacronizerError):
+    """Raised when converting data from a source fails."""
+
+
+class InvalidArgumentError(MacronizerError):
+    """Raised when a function receives an argument with an invalid value."""
+
+
 def pairwise(iterable):
     """s -> (s0,s1), (s2,s3), (s4, s5), ..."""
     a = iter(iterable)
@@ -136,7 +156,7 @@ class Wordlist:
             )  # Try to parse unseen words with Morpheus, and add result to the database
             for word in unseenwords:
                 if not self.loadwordfromdb(word):
-                    raise Exception("Could not store %s in the database." % word)
+                    raise DatabaseError("Could not store %s in the database." % word)
 
     # enddef
 
@@ -147,10 +167,10 @@ class Wordlist:
                     "SELECT wordform, morphtag, lemma, accented FROM morpheus WHERE wordform = ?",
                     (word,),
                 )
-            except Exception:
-                raise Exception(
+            except Exception as exc:
+                raise DatabaseError(
                     "Database table is missing. Please reset the database using --initialize."
-                )
+                ) from exc
             rows = self.dbcursor.fetchall()
             if len(rows) == 0:
                 return False
@@ -187,7 +207,9 @@ class Wordlist:
         )
         exitcode = os.system(morpheus_command)
         if exitcode != 0:
-            raise Exception("Failed to execute: %s" % morpheus_command)
+            raise ExternalDependencyError(
+                "Failed to execute Morpheus command: %s" % morpheus_command
+            )
         os.remove(morphinpfname)
         with open(crunchedfname, "r", encoding="utf-8") as crunchedfile:
             morpheus = crunchedfile.read()
@@ -604,7 +626,9 @@ class Tokenization:
         )
         exitcode = os.system(rft_command)
         if exitcode != 0:
-            raise Exception("Failed to execute: %s" % rft_command)
+            raise ExternalDependencyError(
+                "Failed to execute RFTagger command: %s" % rft_command
+            )
         with open(fromtaggerfname, "r", encoding="utf-8") as fromtaggerfile:
             (taggedenclititoken, enclitictag) = (None, None)
             line = None
@@ -629,14 +653,14 @@ class Tokenization:
                             assert taggedtoken == toascii(token.text.lower())
                         else:
                             assert taggedtoken == toascii(token.text)
-                    except AssertionError:
-                        raise Exception(
+                    except AssertionError as exc:
+                        raise ParsingError(
                             "Error: Could not handle tagging data in file %s:\n'%s'"
                             % (
                                 fromtaggerfname,
                                 "Premature End Of File." if not line else line,
                             )
-                        )
+                        ) from exc
                     # endtry
                     token.tag = tag.replace(".", "")
                 if token.endssentence:
@@ -1300,7 +1324,7 @@ def evaluate(goldstandard, macronizedtext):
         plaina = postags.removemacrons(a)
         plainb = postags.removemacrons(b)
         if touiorthography(toascii(plaina)) != touiorthography(toascii(plainb)):
-            raise Exception("Error: Text mismatch.")
+            raise InvalidArgumentError("Error: Text mismatch.")
         if plaina in "AEIOUYaeiouy":
             vowelcount += 1
             if a == b:
