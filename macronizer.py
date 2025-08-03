@@ -291,8 +291,8 @@ class Token:
         self.accented = [""]
         self.macronized = ""
         self.text = postags.removemacrons(text)
-        self.isword = True if re.match("[^\W\d_]", text, flags=re.UNICODE) else False
-        self.isspace = True if re.match("\s", text, flags=re.UNICODE) else False
+        self.isword = True if re.match(r"[^\W\d_]", text, flags=re.UNICODE) else False
+        self.isspace = True if re.match(r"\s", text, flags=re.UNICODE) else False
         self.hasenclitic = False
         self.isenclitic = False
         self.startssentence = False
@@ -423,7 +423,7 @@ class Tokenization:
         possiblesentenceend = False
         sentencehasended = True
         # This does not work?: [^\W\d_]+|\s+|([^\w\s]|[\d_])+
-        for chunk in re.findall("[^\W\d_]+|\s+|[^\w\s]+|[\d_]+", text, re.UNICODE):
+        for chunk in re.findall(r"[^\W\d_]+|\s+|[^\w\s]+|[\d_]+", text, re.UNICODE):
             token = Token(chunk)
             if token.isword:
                 if sentencehasended:
@@ -777,9 +777,9 @@ class Tokenization:
             """Generate accented forms for unknown words"""
             accented = re.sub("([aeiouy])", "\\1_^", accented)
             accented = accented.replace("qu_^", "qu")
-            accented = re.sub("_\^(ns|nf|nct)", "_\\1", accented)
-            accented = re.sub("_\^([bcdfgjklmnpqrstv]{2,}|[xz])", "\\1", accented)
-            accented = re.sub("_\^m$", "m", accented)
+            accented = re.sub(r"_\^(ns|nf|nct)", "_\\1", accented)
+            accented = re.sub(r"_\^([bcdfgjklmnpqrstv]{2,}|[xz])", "\\1", accented)
+            accented = re.sub(r"_\^m$", "m", accented)
             return accented
 
         # enddef
