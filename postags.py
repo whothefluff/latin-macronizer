@@ -24,7 +24,7 @@ PART_OF_SPEECH = "pos"
 NOUN = "noun"
 VERB = "verb"
 ADJECTIVE = "adj"
-ARTICLE = "article"
+ARTICLE = "article"  # not included in featMap, relevant since Latin does not have?
 PARTICLE = "particle"
 ADVERB = "adv"
 ADVERBIAL = "adverbial"
@@ -278,6 +278,7 @@ def parse_to_ldt(parse):
         ldt_tag += "n"
     elif parse.get(PART_OF_SPEECH, "") == VERB:
         ldt_tag += "v"
+    # TODO why? functions not reciprocal on purpose?
     # elif parse.get(PART_OF_SPEECH, '') == PARTICIPLE:
     #     LDTtag += 't'
     elif parse.get(PART_OF_SPEECH, "") == ADJECTIVE:
@@ -625,7 +626,7 @@ def morpheus_to_parses(wordform, nl):
     # enddef
 
     grouped_parses = [parse]
-    for i in range(2, len(morph_codes) - 1):
+    for i in range(2, len(morph_codes)):
         code = morph_codes[i]
         if code.count("/") > 0:
             code_components = code.split("/")
@@ -643,26 +644,43 @@ def morpheus_to_parses(wordform, nl):
     # Morpheus does not report gerunds, only gerundives. So for those gerundives which look like gerunds, add alternative parses.
     # Similarly, many third declension nomina which can be of any gender are not marked for gender at all.
     final_parses = []
-    for parse in grouped_parses:
-        if (
-            parse.get(MOOD, "") == GERUNDIVE
-            and parse.get(NUMBER, "") == SINGULAR
-            and parse.get(GENDER, "") == NEUTER
-            and parse.get(CASE, "") != NOMINATIVE
-        ):
-            new_parse = parse.copy()
-            setfeature(new_parse, GERUND, overwrite=True)
-            final_parses.append(new_parse)
-        elif parse.get(GENDER, "") == "" and parse.get(CASE, "") != "":
-            new_parse = parse.copy()
-            setfeature(new_parse, MASCULINE)
-            final_parses.append(new_parse)
-            new_parse = parse.copy()
-            setfeature(new_parse, FEMININE)
-            final_parses.append(new_parse)
-            setfeature(parse, NEUTER)
-        # endif
-        final_parses.append(parse)
+    for parse_in in grouped_parses:
+
+        is_expandable_gerundive = (
+            parse_in.get(MOOD, "") == GERUNDIVE
+            and parse_in.get(NUMBER, "") == SINGULAR
+            and parse_in.get(GENDER, "") == NEUTER
+            and parse_in.get(CASE, "") != NOMINATIVE
+        )
+
+        is_expandable_genderless_noun = (
+            parse_in.get(GENDER, "") == "" and parse_in.get(CASE, "") != ""
+        )
+
+        if is_expandable_gerundive:
+
+            final_parses.append(parse_in)  # Add the original
+            gerund_alternative = parse_in.copy()
+            setfeature(gerund_alternative, GERUND, overwrite=True)
+            final_parses.append(gerund_alternative)
+
+        elif is_expandable_genderless_noun:  # Discard original
+
+            masc_version = parse_in.copy()
+            setfeature(masc_version, MASCULINE)
+            final_parses.append(masc_version)
+
+            fem_version = parse_in.copy()
+            setfeature(fem_version, FEMININE)
+            final_parses.append(fem_version)
+
+            neut_version = parse_in.copy()
+            setfeature(neut_version, NEUTER)
+            final_parses.append(neut_version)
+
+        else:  # Standard parse (no changes)
+            final_parses.append(parse_in)
+
     return final_parses
 
 
@@ -875,8 +893,9 @@ def parses_to_proiel_tags(parses):
 def tag_distance(tag1, tag2):
     """To help select the best alternative, define a measure to compare how similar tags are."""
     if not (len(tag1) == len(tag2) == 9 or len(tag1) == len(tag2) == 12):
-        print("Warning: Strange or mismatching tags!", tag1, tag2)
-        exit(0)
+        raise ValueError(
+            f"Mismatched or invalid tag lengths for comparison: '{tag1}' ({len(tag1)}), '{tag2}' ({len(tag2)})"
+        )
 
     def is_nomen(tag):
         if (
