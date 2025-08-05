@@ -18,6 +18,17 @@
 
 import re
 
+# Finds ambiguous _^ before a "muta cum liquida"
+# This rule prefers the tautosyllabic reading (making the preceding vowel short (^))
+# Heterosyllabic escansion exists imitating Greek epic, specially in poetry
+RE_MUTA_CUM_LIQUIDA = re.compile(r"_\^([bcdfgpt][lr])")
+
+# Finds a long u_ before a final m. Vowels in this position are short
+RE_SHORT_FINAL_UM = re.compile(r"u_m$")
+
+# Finds a vowel before specific nasal consonant clusters
+RE_LONG_BY_POSITION_NASAL = re.compile(r"([AEIOUYaeiouy])\^?n([sfx]|ct)")
+
 featMap = {}
 
 PART_OF_SPEECH = "pos"
@@ -494,9 +505,9 @@ def removemacrons(txt):
 
 def filter_accents(accented):
     accented = accented.replace("^_", "_^")
-    accented = re.sub(r"_\^([bcdfgpt][lr])", "^\\1", accented)
-    accented = re.sub("u_m$", "um", accented)
-    accented = re.sub(r"([AEIOUYaeiouy])\^?n([sfx]|ct)", "\\1_n\\2", accented)
+    accented = RE_MUTA_CUM_LIQUIDA.sub(r"^\1", accented)
+    accented = RE_SHORT_FINAL_UM.sub("um", accented)
+    accented = RE_LONG_BY_POSITION_NASAL.sub(r"\1_n\2", accented)
     return accented
 
 

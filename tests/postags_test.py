@@ -15,10 +15,12 @@ from postags import (  # pylint: disable=unused-import
     MOOD,
     NEUTER,
     NOMINATIVE,
+    NOUN,
     NUMBER,
     PART_OF_SPEECH,
     PARTICIPLE,
     PASSIVE,
+    PERFECT,
     PERSON,
     PLURAL,
     PRESENT,
@@ -27,8 +29,13 @@ from postags import (  # pylint: disable=unused-import
     VERB,
     VOCATIVE,
     VOICE,
+    escape_macrons,
+    filter_accents,
     morpheus_to_parses,
+    parse_to_ldt,
+    removemacrons,
     tag_distance,
+    unicodeaccents,
 )
 
 
@@ -387,3 +394,80 @@ def test_tag_distance_rejects_invalid_length_tags():
     short_tag2 = "short"
     with pytest.raises(ValueError, match="Mismatched or invalid tag lengths"):
         tag_distance(short_tag1, short_tag2)
+
+
+def test_unicodeaccents():
+    assert unicodeaccents("test a_ e_ i_ o_ u_ y_") == "test ā ē ī ō ū ȳ"
+    assert unicodeaccents("A_ E_ I_ O_ U_ Y_") == "Ā Ē Ī Ō Ū Ȳ"
+    assert unicodeaccents("") == ""
+
+
+def test_escape_macrons():
+    assert escape_macrons("test ā ē ī ō ū ȳ") == "test a_ e_ i_ o_ u_ y_"
+    assert escape_macrons("Ā Ē Ī Ō Ū Ȳ") == "A_ E_ I_ O_ U_ Y_"
+    assert escape_macrons("") == ""
+
+
+def test_removemacrons():
+    assert removemacrons("test ā ē ī ō ū ȳ") == "test a e i o u y"
+    assert removemacrons("Ā Ē Ī Ō Ū Ȳ") == "A E I O U Y"
+    assert removemacrons("") == ""
+
+
+def test_filter_accents():
+    # Test case 1: non-matching patterns are not changed
+    assert filter_accents("a^b") == "a^b"
+    # Test case 2, muta cum liquida: re.sub(r"^([bcdfgpt][lr])", "^\1", accented)
+    assert filter_accents("inte^_grum") == "inte^grum"
+    assert filter_accents("tene_^brae") == "tene^brae"
+    # Test case 3: re.sub("u_m$", "um", accented)
+    assert filter_accents("verbu_m") == "verbum"
+    # check end of string anchor
+    assert filter_accents("verbu_m_extra") != "verbum_extra"
+    # Test case 4, long by position: re.sub(r"([AEIOUYaeiouy])^?n([sfx]|ct)", "\1_n\2", accented)
+    assert filter_accents("a^ns") == "a_ns"
+    assert filter_accents("ans") == "a_ns"
+    assert filter_accents("infans") == "i_nfa_ns"
+    assert filter_accents("sanctus") == "sa_nctus"  # with 'nct'
+    # Test a combination
+    assert filter_accents("a^_blu_m") == "a^blum"
+
+
+def test_parse_to_ldt_simple_noun():
+    parse = {
+        PART_OF_SPEECH: NOUN,
+        NUMBER: SINGULAR,
+        GENDER: MASCULINE,
+        CASE: NOMINATIVE,
+    }
+    assert parse_to_ldt(parse) == "n-s---mn-"
+
+
+def test_parse_to_ldt_complex_verb():
+    parse = {
+        PART_OF_SPEECH: VERB,
+        PERSON: FIRST_PERSON,
+        NUMBER: SINGULAR,
+        TENSE: PRESENT,
+        MOOD: INDICATIVE,
+        VOICE: ACTIVE,
+    }
+    assert parse_to_ldt(parse) == "v1spia---"
+
+
+def test_parse_to_ldt_special_passive():
+    # Gerundive should result in 'p' for tense, 'g' for mood, 'p' for voice
+    parse = {PART_OF_SPEECH: VERB, MOOD: GERUNDIVE}
+    assert parse_to_ldt(parse) == "v--pgp---"
+    # Perfect participle should result in 'r' for tense, 'p' for mood, 'p' for voice
+    parse = {PART_OF_SPEECH: VERB, TENSE: PERFECT, MOOD: PARTICIPLE}
+    assert parse_to_ldt(parse) == "v--rpp---"
+
+
+def test_parse_to_ldt_special_active():
+    # Gerundive should result in 'p' for tense, 'g' for mood, 'a' for voice
+    parse = {PART_OF_SPEECH: VERB, MOOD: GERUND}
+    assert parse_to_ldt(parse) == "v--pda---"
+    # Perfect participle should result in 'p' for tense, 'p' for mood, 'a' for voice
+    parse = {PART_OF_SPEECH: VERB, TENSE: PRESENT, MOOD: PARTICIPLE}
+    assert parse_to_ldt(parse) == "v--ppa---"
