@@ -137,151 +137,6 @@ LEMMA = "lemma"
 ACCENTEDFORM = "accentedform"
 
 
-def ldt_to_parse(ldt_tag):
-    parse = {}
-
-    if ldt_tag[0] == "-":
-        pass
-    elif ldt_tag[0] == "n":
-        parse[PART_OF_SPEECH] = NOUN
-    elif ldt_tag[0] == "v":
-        parse[PART_OF_SPEECH] = VERB
-    elif ldt_tag[0] == "t":
-        # parse[PART_OF_SPEECH] = PARTICIPLE
-        parse[PART_OF_SPEECH] = VERB
-        parse[MOOD] = PARTICIPLE
-        print("Note: 'participle' used as POS")
-    elif ldt_tag[0] == "a":
-        parse[PART_OF_SPEECH] = ADJECTIVE
-    elif ldt_tag[0] == "d":
-        parse[PART_OF_SPEECH] = ADVERB
-    elif ldt_tag[0] == "c":
-        parse[PART_OF_SPEECH] = CONJUNCTION
-    elif ldt_tag[0] == "r":
-        parse[PART_OF_SPEECH] = PREPOSITION
-    elif ldt_tag[0] == "p":
-        parse[PART_OF_SPEECH] = PRONOUN
-    elif ldt_tag[0] == "m":
-        parse[PART_OF_SPEECH] = NUMERAL
-    elif ldt_tag[0] == "i":
-        parse[PART_OF_SPEECH] = INTERJECTION
-    elif ldt_tag[0] == "e":
-        parse[PART_OF_SPEECH] = EXCLAMATION
-    elif ldt_tag[0] == "u":
-        parse[PART_OF_SPEECH] = PUNCTUATION
-    else:
-        print("Warning: unknown part of speech:", ldt_tag[0])
-
-    if ldt_tag[1] == "-":
-        pass
-    elif ldt_tag[1] == "1":
-        parse[PERSON] = FIRST_PERSON
-    elif ldt_tag[1] == "2":
-        parse[PERSON] = SECOND_PERSON
-    elif ldt_tag[1] == "3":
-        parse[PERSON] = THIRD_PERSON
-    else:
-        print("Warning: unknown person:", ldt_tag[1])
-
-    if ldt_tag[2] == "-":
-        pass
-    elif ldt_tag[2] == "s":
-        parse[NUMBER] = SINGULAR
-    elif ldt_tag[2] == "p":
-        parse[NUMBER] = PLURAL
-    else:
-        print("Warning: unknown number:", ldt_tag[2])
-
-    if ldt_tag[3] == "-":
-        pass
-    elif ldt_tag[3] == "p":
-        parse[TENSE] = PRESENT
-    elif ldt_tag[3] == "i":
-        parse[TENSE] = IMPERFECT
-    elif ldt_tag[3] == "r":
-        parse[TENSE] = PERFECT
-    elif ldt_tag[3] == "l":
-        parse[TENSE] = PLUPERFECT
-    elif ldt_tag[3] == "t":
-        parse[TENSE] = FUTURE_PERFECT
-    elif ldt_tag[3] == "f":
-        parse[TENSE] = FUTURE
-    else:
-        print("Warning: unknown tense:", ldt_tag[3])
-
-    if ldt_tag[4] == "-":
-        pass
-    elif ldt_tag[4] == "i":
-        parse[MOOD] = INDICATIVE
-    elif ldt_tag[4] == "s":
-        parse[MOOD] = SUBJUNCTIVE
-    elif ldt_tag[4] == "n":
-        parse[MOOD] = INFINITIVE
-    elif ldt_tag[4] == "m":
-        parse[MOOD] = IMPERATIVE
-    elif ldt_tag[4] == "p":
-        parse[MOOD] = PARTICIPLE
-    elif ldt_tag[4] == "d":
-        parse[MOOD] = GERUND
-    elif ldt_tag[4] == "g":
-        parse[MOOD] = GERUNDIVE
-    elif ldt_tag[4] == "u":
-        parse[MOOD] = SUPINE
-    else:
-        print("Warning: unknown mood:", ldt_tag[4])
-
-    if ldt_tag[5] == "-":
-        pass
-    elif ldt_tag[5] == "a":
-        parse[VOICE] = ACTIVE
-    elif ldt_tag[5] == "p":
-        parse[VOICE] = PASSIVE
-    else:
-        print("Warning: unknown voice:", ldt_tag[5])
-
-    if ldt_tag[6] == "-":
-        pass
-    elif ldt_tag[6] == "m":
-        parse[GENDER] = MASCULINE
-    elif ldt_tag[6] == "f":
-        parse[GENDER] = FEMININE
-    elif ldt_tag[6] == "n":
-        parse[GENDER] = NEUTER
-    else:
-        print("Warning: unknown gender:", ldt_tag[6])
-
-    if ldt_tag[7] == "-":
-        pass
-    elif ldt_tag[7] == "n":
-        parse[CASE] = NOMINATIVE
-    elif ldt_tag[7] == "g":
-        parse[CASE] = GENITIVE
-    elif ldt_tag[7] == "d":
-        parse[CASE] = DATIVE
-    elif ldt_tag[7] == "a":
-        parse[CASE] = ACCUSATIVE
-    elif ldt_tag[7] == "b":
-        parse[CASE] = ABLATIVE
-    elif ldt_tag[7] == "v":
-        parse[CASE] = VOCATIVE
-    elif ldt_tag[7] == "l":
-        parse[CASE] = LOCATIVE
-    else:
-        print("Warning: unknown case:", ldt_tag[7])
-
-    if ldt_tag[8] == "-":
-        pass
-    elif ldt_tag[8] == "c":
-        parse[DEGREE] = COMPARATIVE
-    elif ldt_tag[8] == "s":
-        parse[DEGREE] = SUPERLATIVE
-    # POSITIVE not in use? (default)
-    else:
-        print("Warning: unknown degree:", ldt_tag[8])
-
-    return parse
-
-
 def parse_to_ldt(parse):
     ldt_tag = ""
 
@@ -289,7 +144,7 @@ def parse_to_ldt(parse):
         ldt_tag += "n"
     elif parse.get(PART_OF_SPEECH, "") == VERB:
         ldt_tag += "v"
-    # TODO why? functions not reciprocal on purpose?
+    # ldt_to_parse function not reciprocal on purpose?
     # elif parse.get(PART_OF_SPEECH, '') == PARTICIPLE:
     #     LDTtag += 't'
     elif parse.get(PART_OF_SPEECH, "") == ADJECTIVE:
@@ -695,6 +550,45 @@ def morpheus_to_parses(wordform, nl):
     return final_parses
 
 
+def tag_distance(tag1, tag2):
+    """To help select the best alternative, define a measure to compare how similar tags are."""
+    if not (len(tag1) == len(tag2) == 9 or len(tag1) == len(tag2) == 12):
+        raise ValueError(
+            f"Mismatched or invalid tag lengths for comparison: '{tag1}' ({len(tag1)}), '{tag2}' ({len(tag2)})"
+        )
+
+    def is_nomen(tag):
+        if (
+            tag[0] == "n"
+            or tag[0] == "a"
+            or tag[0] == "v"
+            and (tag[3:6] == "rpp" or tag[3:6] == "ppa")
+        ):
+            return True
+        elif (
+            tag[0] == "N"
+            or tag[0] == "A"
+            or tag[0] == "V"
+            and (tag[4:7] == "rpp" or tag[4:7] == "ppa")
+        ):
+            return True
+        return False
+
+    # enddef
+
+    dist = 0
+    bothnomenbutdifferent = False
+    if is_nomen(tag1) and is_nomen(tag2) and tag1[0] != tag2[0]:
+        bothnomenbutdifferent = True
+    for i, (char1, char2) in enumerate(zip(tag1, tag2)):
+        is_ignored_index = bothnomenbutdifferent and (
+            (len(tag1) == 9 and i in {3, 4, 5}) or (len(tag1) == 12 and i in {4, 5, 6})
+        )
+        if char1 != char2 and not is_ignored_index:
+            dist += 1
+    return dist
+
+
 def parse_to_proiel_tag(parse):
     tag = ""
 
@@ -901,43 +795,146 @@ def parses_to_proiel_tags(parses):
     return tags
 
 
-def tag_distance(tag1, tag2):
-    """To help select the best alternative, define a measure to compare how similar tags are."""
-    if not (len(tag1) == len(tag2) == 9 or len(tag1) == len(tag2) == 12):
-        raise ValueError(
-            f"Mismatched or invalid tag lengths for comparison: '{tag1}' ({len(tag1)}), '{tag2}' ({len(tag2)})"
-        )
+def ldt_to_parse(ldt_tag):
+    parse = {}
 
-    def is_nomen(tag):
-        if (
-            tag[0] == "n"
-            or tag[0] == "a"
-            or tag[0] == "v"
-            and (tag[3:6] == "rpp" or tag[3:6] == "ppa")
-        ):
-            return True
-        elif (
-            tag[0] == "N"
-            or tag[0] == "A"
-            or tag[0] == "V"
-            and (tag[4:7] == "rpp" or tag[4:7] == "ppa")
-        ):
-            return True
-        return False
+    if ldt_tag[0] == "-":
+        pass
+    elif ldt_tag[0] == "n":
+        parse[PART_OF_SPEECH] = NOUN
+    elif ldt_tag[0] == "v":
+        parse[PART_OF_SPEECH] = VERB
+    elif ldt_tag[0] == "t":
+        # parse[PART_OF_SPEECH] = PARTICIPLE
+        parse[PART_OF_SPEECH] = VERB
+        parse[MOOD] = PARTICIPLE
+        print("Note: 'participle' used as POS")
+    elif ldt_tag[0] == "a":
+        parse[PART_OF_SPEECH] = ADJECTIVE
+    elif ldt_tag[0] == "d":
+        parse[PART_OF_SPEECH] = ADVERB
+    elif ldt_tag[0] == "c":
+        parse[PART_OF_SPEECH] = CONJUNCTION
+    elif ldt_tag[0] == "r":
+        parse[PART_OF_SPEECH] = PREPOSITION
+    elif ldt_tag[0] == "p":
+        parse[PART_OF_SPEECH] = PRONOUN
+    elif ldt_tag[0] == "m":
+        parse[PART_OF_SPEECH] = NUMERAL
+    elif ldt_tag[0] == "i":
+        parse[PART_OF_SPEECH] = INTERJECTION
+    elif ldt_tag[0] == "e":
+        parse[PART_OF_SPEECH] = EXCLAMATION
+    elif ldt_tag[0] == "u":
+        parse[PART_OF_SPEECH] = PUNCTUATION
+    else:
+        print("Warning: unknown part of speech:", ldt_tag[0])
 
-    # enddef
+    if ldt_tag[1] == "-":
+        pass
+    elif ldt_tag[1] == "1":
+        parse[PERSON] = FIRST_PERSON
+    elif ldt_tag[1] == "2":
+        parse[PERSON] = SECOND_PERSON
+    elif ldt_tag[1] == "3":
+        parse[PERSON] = THIRD_PERSON
+    else:
+        print("Warning: unknown person:", ldt_tag[1])
 
-    dist = 0
-    bothnomenbutdifferent = False
-    if is_nomen(tag1) and is_nomen(tag2) and tag1[0] != tag2[0]:
-        bothnomenbutdifferent = True
-    for i, (char1, char2) in enumerate(zip(tag1, tag2)):
-        is_ignored_index = bothnomenbutdifferent and (
-            (len(tag1) == 9 and i in {3, 4, 5}) or (len(tag1) == 12 and i in {4, 5, 6})
-        )
-        if char1 != char2 and not is_ignored_index:
-            dist += 1
-    return dist
+    if ldt_tag[2] == "-":
+        pass
+    elif ldt_tag[2] == "s":
+        parse[NUMBER] = SINGULAR
+    elif ldt_tag[2] == "p":
+        parse[NUMBER] = PLURAL
+    else:
+        print("Warning: unknown number:", ldt_tag[2])
 
+    if ldt_tag[3] == "-":
+        pass
+    elif ldt_tag[3] == "p":
+        parse[TENSE] = PRESENT
+    elif ldt_tag[3] == "i":
+        parse[TENSE] = IMPERFECT
+    elif ldt_tag[3] == "r":
+        parse[TENSE] = PERFECT
+    elif ldt_tag[3] == "l":
+        parse[TENSE] = PLUPERFECT
+    elif ldt_tag[3] == "t":
+        parse[TENSE] = FUTURE_PERFECT
+    elif ldt_tag[3] == "f":
+        parse[TENSE] = FUTURE
+    else:
+        print("Warning: unknown tense:", ldt_tag[3])
 
-# enddef
+    if ldt_tag[4] == "-":
+        pass
+    elif ldt_tag[4] == "i":
+        parse[MOOD] = INDICATIVE
+    elif ldt_tag[4] == "s":
+        parse[MOOD] = SUBJUNCTIVE
+    elif ldt_tag[4] == "n":
+        parse[MOOD] = INFINITIVE
+    elif ldt_tag[4] == "m":
+        parse[MOOD] = IMPERATIVE
+    elif ldt_tag[4] == "p":
+        parse[MOOD] = PARTICIPLE
+    elif ldt_tag[4] == "d":
+        parse[MOOD] = GERUND
+    elif ldt_tag[4] == "g":
+        parse[MOOD] = GERUNDIVE
+    elif ldt_tag[4] == "u":
+        parse[MOOD] = SUPINE
+    else:
+        print("Warning: unknown mood:", ldt_tag[4])
+
+    if ldt_tag[5] == "-":
+        pass
+    elif ldt_tag[5] == "a":
+        parse[VOICE] = ACTIVE
+    elif ldt_tag[5] == "p":
+        parse[VOICE] = PASSIVE
+    else:
+        print("Warning: unknown voice:", ldt_tag[5])
+
+    if ldt_tag[6] == "-":
+        pass
+    elif ldt_tag[6] == "m":
+        parse[GENDER] = MASCULINE
+    elif ldt_tag[6] == "f":
+        parse[GENDER] = FEMININE
+    elif ldt_tag[6] == "n":
+        parse[GENDER] = NEUTER
+    else:
+        print("Warning: unknown gender:", ldt_tag[6])
+
+    if ldt_tag[7] == "-":
+        pass
+    elif ldt_tag[7] == "n":
+        parse[CASE] = NOMINATIVE
+    elif ldt_tag[7] == "g":
+        parse[CASE] = GENITIVE
+    elif ldt_tag[7] == "d":
+        parse[CASE] = DATIVE
+    elif ldt_tag[7] == "a":
+        parse[CASE] = ACCUSATIVE
+    elif ldt_tag[7] == "b":
+        parse[CASE] = ABLATIVE
+    elif ldt_tag[7] == "v":
+        parse[CASE] = VOCATIVE
+    elif ldt_tag[7] == "l":
+        parse[CASE] = LOCATIVE
+    else:
+        print("Warning: unknown case:", ldt_tag[7])
+
+    if ldt_tag[8] == "-":
+        pass
+    elif ldt_tag[8] == "c":
+        parse[DEGREE] = COMPARATIVE
+    elif ldt_tag[8] == "s":
+        parse[DEGREE] = SUPERLATIVE
+    # POSITIVE not in use? (default)
+    else:
+        print("Warning: unknown degree:", ldt_tag[8])
+
+    return parse
