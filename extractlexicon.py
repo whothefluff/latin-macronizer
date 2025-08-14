@@ -77,9 +77,9 @@ def create_training_corpus(config_path: str) -> None:
         )
         return
     with open("ldt-corpus.txt", "w", encoding="utf-8") as pos_corpus_file:
-        xsegment = ""
-        xsegmentbehind = ""
         for f_path in xml_files_to_process:
+            xsegment = ""
+            xsegmentbehind = ""
             print(f"  -> Processing {f_path}")
             try:
                 bank = ET.parse(f_path)
