@@ -112,7 +112,7 @@ def create_training_corpus(config_path: str) -> None:
                         ):
                             xsegmentbehind = form
                             continue
-                        postag = ".".join(list(postag))
+                        postag = ".".join(postag)
                         lemma = (
                             lemma.replace("#", "").replace("1", "").replace(" ", "+")
                         )
