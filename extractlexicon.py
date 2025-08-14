@@ -1,6 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
+import argparse
+import configparser
 import pprint
 import xml.etree.ElementTree as ET
 from collections import defaultdict
@@ -57,26 +59,36 @@ def create_lexicon_and_endings_data() -> None:
         endings_file.write("}\n")
 
 
-def create_training_corpus() -> None:
+def create_training_corpus(config_path: str) -> None:
     """
-    - Parses a hard-coded list of XML treebank files.
+    - Parses a list of XML treebank files specified in a config file.
     - Processes the tokens and writes them to ldt-corpus.txt.
     """
-    print("Creating training corpus from treebank data...")
+    print("Creating training corpus from treebank data.")
+    config = configparser.ConfigParser()
+    config.read(config_path)
+    files_str = config.get("source_files", "xml_files", fallback="")
+    xml_files_to_process = [
+        path.strip() for path in files_str.strip().split("\n") if path.strip()
+    ]
+    if not xml_files_to_process:
+        print(
+            f"[!] WARNING: No files listed in '{config_path}'. No corpus will be generated from treebanks."
+        )
+        return
     with open("ldt-corpus.txt", "w", encoding="utf-8") as pos_corpus_file:
         xsegment = ""
         xsegmentbehind = ""
-        for f in [
-            "1999.02.0010",
-            "2008.01.0002",
-            "2007.01.0001",
-            "1999.02.0060",
-            "phi0448.phi001.perseus-lat1",
-            "phi0620.phi001.perseus-lat1",
-            "phi0959.phi006.perseus-lat1",
-            "phi0690.phi003.perseus-lat1",
-        ]:
-            bank = ET.parse(f"treebank_data/v1.6/latin/data/{f}.tb.xml")
+        for f_path in xml_files_to_process:
+            print(f"  -> Processing {f_path}")
+            try:
+                bank = ET.parse(f_path)
+            except FileNotFoundError:
+                print(f"   [!] WARNING: File not found, skipping: {f_path}")
+                continue
+            except ET.ParseError:
+                print(f"   [!] WARNING: XML could not be parsed, skipping: {f_path}")
+                continue
             for sentence in bank.getroot():
                 for token in sentence.findall("word"):
                     idnum = int(token.get("id", "_"))
@@ -143,13 +155,23 @@ def create_lemma_frequency_file() -> None:
 
 def main() -> None:
     """
-    Orchestrates the process of generating all necessary data files
-    for the RFTagger training.
+    Orchestrates the process, optionally using a specific config file for the corpus.
     """
+    parser = argparse.ArgumentParser(
+        description="Run the Latin data preparation pipeline."
+    )
+    parser.add_argument(
+        "config_file",
+        nargs="?",
+        default="corpus.ini",
+        help="Path to the .ini configuration file. Defaults to 'corpus.ini'.",
+    )
+    args = parser.parse_args()
+    print(f"Using configuration from: {args.config_file}\n")
     print("Step 1:")
     create_lexicon_and_endings_data()
     print("Step 2:")
-    create_training_corpus()
+    create_training_corpus(args.config_file)
     print("Step 3:")
     create_lemma_frequency_file()
     print("\nAll tasks complete. Required files have been generated.")
