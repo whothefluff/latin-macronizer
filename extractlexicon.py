@@ -78,8 +78,6 @@ def create_training_corpus(config_path: str) -> None:
         return
     with open("ldt-corpus.txt", "w", encoding="utf-8") as pos_corpus_file:
         for f_path in xml_files_to_process:
-            xsegment = ""
-            xsegmentbehind = ""
             print(f"  -> Processing {f_path}")
             try:
                 bank = ET.parse(f_path)
@@ -90,6 +88,8 @@ def create_training_corpus(config_path: str) -> None:
                 print(f"   [!] WARNING: XML could not be parsed, skipping: {f_path}")
                 continue
             for sentence in bank.getroot():
+                xsegment = ""
+                xsegmentbehind = ""
                 for token in sentence.findall("word"):
                     idnum = int(token.get("id", "_"))
                     head = int(token.get("head", "_"))
@@ -98,6 +98,7 @@ def create_training_corpus(config_path: str) -> None:
                     lemma = token.get("lemma", form)
                     postag = token.get("postag", "_")
                     if form != "|" and postag != "" and postag != "_":
+                        # Handles words that are split in the treebank 
                         if (
                             lemma == "other"
                             and relation == "XSEG"
@@ -105,6 +106,7 @@ def create_training_corpus(config_path: str) -> None:
                         ):
                             xsegment = form
                             continue
+                        # Handles enclitics
                         if (
                             (lemma == "que1" or lemma == "ne1")
                             and relation == "XSEG"
