@@ -32,7 +32,7 @@ def create_lexicon_and_endings_data() -> None:
             tag_to_accents[tag].append(postags.unicodeaccents(accented_clean))
             if accented[0].isupper():
                 wordform = wordform.title()
-            tag = ".".join(list(tag))
+            tag = ".".join(tag)
             lexicon_file.write(f"{wordform}\t{tag}\t{lemma}\n")
 
     # Second pass: Use the gathered accent data to create the endings file
