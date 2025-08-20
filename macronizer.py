@@ -19,9 +19,10 @@
 import os
 import re
 import sqlite3
+import subprocess
 from collections import defaultdict
 from html import escape
-from tempfile import mkstemp
+from tempfile import NamedTemporaryFile
 
 import postags
 from lemmas import lemma_frequency, word_lemma_freq, wordform_to_corpus_lemmas
@@ -195,74 +196,96 @@ class Wordlist:
     # enddef
 
     def crunchwords(self, words):
-        morphinpfd, morphinpfname = mkstemp()
-        os.close(morphinpfd)
-        crunchedfd, crunchedfname = mkstemp()
-        os.close(crunchedfd)
-        with open(morphinpfname, "w", encoding="utf-8") as morphinpfile:
-            for word in words:
-                morphinpfile.write(word.strip().lower() + "\n")
-                morphinpfile.write(word.strip().capitalize() + "\n")
-        morpheus_command = f"MORPHLIB={MORPHEUS_DIR}/stemlib {MORPHEUS_DIR}/bin/cruncher -L < {morphinpfname} > {crunchedfname} 2> /dev/null"
-        exitcode = os.system(morpheus_command)
-        if exitcode != 0:
-            raise ExternalDependencyError(
-                f"Failed to execute Morpheus command: {morpheus_command}"
-            )
-        os.remove(morphinpfname)
-        with open(crunchedfname, "r", encoding="utf-8") as crunchedfile:
-            morpheus = crunchedfile.read()
-        os.remove(crunchedfname)
-        crunchedwordforms = {}
-        knownwords = set()
-        for wordform, nls in pairwise(morpheus.split("\n")):
-            wordform = wordform.strip().lower()
-            nls = nls.strip()
-            crunchedwordforms[wordform] = crunchedwordforms.get(wordform, "") + nls
-        for wordform, nls in crunchedwordforms.items():
-            parses = []
-            for nl in nls.split("<NL>"):
-                nl = nl.replace("</NL>", "")
-                nlparts = nl.split()
-                if len(nlparts) > 0:
-                    parses += postags.morpheus_to_parses(wordform, nl)
-            lemmatagtoaccenteds = defaultdict(list)
-            for parse in parses:
-                lemma = clean_lemma(parse[postags.LEMMA])
-                parse[postags.LEMMA] = lemma
-                accented = parse[postags.ACCENTEDFORM]
-                # Work around shortcoming in Morpheus, adding _ in tradu_co_, etc.:
-                if parse[postags.LEMMA].startswith("trans") and accented[3] != "_":
-                    accented = accented[:3] + "_" + accented[3:]
-                parse[postags.ACCENTEDFORM] = accented
-                tag = postags.parse_to_ldt(parse)
-                lemmatagtoaccenteds[(lemma, tag)].append(accented)
-            if len(lemmatagtoaccenteds) == 0:
-                continue
-            knownwords.add(wordform)
-            for (lemma, tag), accenteds in lemmatagtoaccenteds.items():
-                # Sometimes there are multiple accented forms; prefer 'volvit' to 'voluit', 'Ju_lius' to 'Iu_lius' etc.:
-                bestaccented = sorted(
-                    accenteds, key=lambda x: x.count("v") + x.count("j") + x.count("J")
-                )[-1]
-                lemmatagtoaccenteds[(lemma, tag)] = bestaccented
-            for (lemma, tag), accented in lemmatagtoaccenteds.items():
-                self.dbcursor.execute(
-                    "INSERT OR IGNORE INTO morpheus (wordform, morphtag, lemma, accented) VALUES (?, ?, ?, ?)",
-                    (wordform, tag, lemma, accented),
+        morphinp = NamedTemporaryFile(
+            "w", encoding="utf-8", delete=False, suffix=".txt"
+        )
+        crunched = NamedTemporaryFile("wb", delete=False, suffix=".txt")
+        morphinpfname = morphinp.name
+        crunchedfname = crunched.name
+        morphinp.close()
+        crunched.close()
+        try:
+            # Write to the input file for Morpheus cruncher
+            with open(morphinpfname, "w", encoding="utf-8") as morphinpfile:
+                for w in words:
+                    word = w.strip()
+                    morphinpfile.write(word.lower() + "\n")
+                    morphinpfile.write(word.capitalize() + "\n")
+            # Resolve Morpheus cruncher path
+            cruncher = os.path.join(MORPHEUS_DIR, "bin", "cruncher")
+            if not (os.path.isfile(cruncher) and os.access(cruncher, os.X_OK)):
+                raise ExternalDependencyError(
+                    f"Morpheus cruncher not found or not executable: {cruncher}"
                 )
-        # The remaining were unknown to Morpheus:
-        for wordform in words - knownwords:
-            self.dbcursor.execute(
-                "INSERT OR IGNORE INTO morpheus (wordform) VALUES (?)", (wordform,)
-            )
+            cmd = [cruncher, "-L"]
+            env = os.environ.copy()
+            env["MORPHLIB"] = os.path.join(MORPHEUS_DIR, "stemlib")
+            # Run cruncher: stdin <- morphinpfname, stdout -> crunchedfname
+            with open(morphinpfname, "rb") as fin, open(crunchedfname, "wb") as fout:
+                run_external(
+                    cmd,
+                    stdin=fin,
+                    stdout=fout,
+                    env=env,
+                    timeout=120,
+                    tool_name="morpheus cruncher",
+                )
+            # Read output
+            with open(crunchedfname, "r", encoding="utf-8") as crunchedfile:
+                morpheus = crunchedfile.read()
+            crunchedwordforms = {}
+            knownwords = set()
+            for wordform, nls in pairwise(morpheus.split("\n")):
+                wordform = wordform.strip().lower()
+                nls = nls.strip()
+                crunchedwordforms[wordform] = crunchedwordforms.get(wordform, "") + nls
+            for wordform, nls in crunchedwordforms.items():
+                parses = []
+                for nl in nls.split("<NL>"):
+                    nl = nl.replace("</NL>", "")
+                    nlparts = nl.split()
+                    if len(nlparts) > 0:
+                        parses += postags.morpheus_to_parses(wordform, nl)
+                lemmatagtoaccenteds = defaultdict(list)
+                for parse in parses:
+                    lemma = clean_lemma(parse[postags.LEMMA])
+                    parse[postags.LEMMA] = lemma
+                    accented = parse[postags.ACCENTEDFORM]
+                    # Work around shortcoming in Morpheus, adding _ in tradu_co_, etc.:
+                    if parse[postags.LEMMA].startswith("trans") and accented[3] != "_":
+                        accented = accented[:3] + "_" + accented[3:]
+                    parse[postags.ACCENTEDFORM] = accented
+                    tag = postags.parse_to_ldt(parse)
+                    lemmatagtoaccenteds[(lemma, tag)].append(accented)
+                if len(lemmatagtoaccenteds) == 0:
+                    continue
+                knownwords.add(wordform)
+                for (lemma, tag), accenteds in lemmatagtoaccenteds.items():
+                    # Sometimes there are multiple accented forms; prefer 'volvit' to 'voluit', 'Ju_lius' to 'Iu_lius' etc.:
+                    bestaccented = sorted(
+                        accenteds,
+                        key=lambda x: x.count("v") + x.count("j") + x.count("J"),
+                    )[-1]
+                    lemmatagtoaccenteds[(lemma, tag)] = bestaccented
+                for (lemma, tag), accented in lemmatagtoaccenteds.items():
+                    self.dbcursor.execute(
+                        "INSERT OR IGNORE INTO morpheus (wordform, morphtag, lemma, accented) VALUES (?, ?, ?, ?)",
+                        (wordform, tag, lemma, accented),
+                    )
+            # The remaining were unknown to Morpheus:
+            for wordform in words - knownwords:
+                self.dbcursor.execute(
+                    "INSERT OR IGNORE INTO morpheus (wordform) VALUES (?)", (wordform,)
+                )
 
-        self.dbconn.commit()
-
-    # enddef
-
-
-# endclass
+            self.dbconn.commit()
+        finally:
+            # Clean up temp files (even on failure)
+            for fn in (morphinpfname, crunchedfname):
+                try:
+                    os.remove(fn)
+                except OSError:
+                    pass
 
 
 prefixeswithshortj = (
@@ -603,12 +626,13 @@ class Tokenization:
     # enddef
 
     def addtags(self):
-        totaggerfd, totaggerfname = mkstemp()
-        os.close(totaggerfd)
-        fromtaggerfd, fromtaggerfname = mkstemp()
-        os.close(fromtaggerfd)
-        savedencliticbearer = None
-        with open(totaggerfname, "w", encoding="utf-8") as totaggerfile:
+        with NamedTemporaryFile(
+            "w+", encoding="utf-8", delete=True
+        ) as totaggerfile, NamedTemporaryFile(
+            "w+", encoding="utf-8", delete=True
+        ) as fromtaggerfile:
+            # Write the input data for RFTagger
+            savedencliticbearer = None
             for token in self.tokens:
                 if not token.isspace:
                     tokentext = token.text
@@ -624,14 +648,33 @@ class Tokenization:
                         savedencliticbearer = None
                 if token.endssentence:
                     totaggerfile.write("\n")
-        rftagger_model = os.path.join(os.path.dirname(__file__), "rftagger-ldt.model")
-        rft_command = f"{RFTAGGER_DIR}/rft-annotate -s -q {rftagger_model} {totaggerfname} {fromtaggerfname}"
-        exitcode = os.system(rft_command)
-        if exitcode != 0:
-            raise ExternalDependencyError(
-                f"Failed to execute RFTagger command: {rft_command}"
+
+            # Ensure all data is written to disk before the external program tries to read it.
+            totaggerfile.flush()
+
+            rftagger_model = os.path.join(
+                os.path.dirname(__file__), "rftagger-ldt.model"
             )
-        with open(fromtaggerfname, "r", encoding="utf-8") as fromtaggerfile:
+            # Resolve rft-annotate path
+            rft_annotate = os.path.join(RFTAGGER_DIR, "rft-annotate")
+            if not (os.path.isfile(rft_annotate) and os.access(rft_annotate, os.X_OK)):
+                raise ExternalDependencyError(
+                    f"RFTagger 'rft-annotate' not found or not executable: {rft_annotate}"
+                )
+
+            cmd = [
+                rft_annotate,
+                "-s",
+                "-q",
+                rftagger_model,
+                totaggerfile.name,
+                fromtaggerfile.name,
+            ]
+            # Run rft-annotate
+            run_external(cmd, tool_name="RFTagger")
+            # After the external tool writes to the file, we need to go back to the start of it to read.
+            fromtaggerfile.seek(0)
+
             (taggedenclititoken, enclitictag) = (None, None)
             line = None
             for token in self.tokens:
@@ -639,17 +682,17 @@ class Tokenization:
                     try:
                         if token.hasenclitic:
                             line = fromtaggerfile.readline().strip()
-                            assert line
-                            assert line.count("\t") == 1
+                            assert line and line.count("\t") == 1
                             (taggedenclititoken, enclitictag) = line.split("\t")
                         if token.isenclitic:
-                            assert taggedenclititoken is not None
-                            assert enclitictag is not None
+                            assert (
+                                taggedenclititoken is not None
+                                and enclitictag is not None
+                            )
                             (taggedtoken, tag) = (taggedenclititoken, enclitictag)
                         else:
                             line = fromtaggerfile.readline().strip()
-                            assert line
-                            assert line.count("\t") == 1
+                            assert line and line.count("\t") == 1
                             (taggedtoken, tag) = line.split("\t")
                         if token.text == token.text.upper():
                             assert taggedtoken == toascii(token.text.lower())
@@ -657,17 +700,12 @@ class Tokenization:
                             assert taggedtoken == toascii(token.text)
                     except AssertionError as exc:
                         raise ParsingError(
-                            f"Error: Could not handle tagging data in file {fromtaggerfname}:\n"
+                            f"Error: Could not handle tagging data from RFTagger:\n"
                             f"'{'Premature End Of File.' if not line else line}'"
                         ) from exc
-                    # endtry
                     token.tag = tag.replace(".", "")
                 if token.endssentence:
                     line = fromtaggerfile.readline()
-        os.remove(totaggerfname)
-        os.remove(fromtaggerfname)
-
-    # enddef
 
     def addlemmas(self, wordlist):
 
@@ -1340,6 +1378,39 @@ def evaluate(goldstandard, macronizedtext):
 
 
 # enddef
+
+
+def run_external(
+    cmd, *, stdin=None, stdout=None, env=None, timeout=120, tool_name=None
+):
+    """
+    Run an external command safely, capturing stderr and converting common failures into ExternalDependencyError.
+    """
+    try:
+        completed = subprocess.run(
+            cmd,
+            stdin=stdin,
+            stdout=stdout,
+            stderr=subprocess.PIPE,  # capture for diagnostics
+            env=env,
+            check=True,
+            timeout=timeout,
+        )
+        return completed
+    except FileNotFoundError as exc:
+        name = tool_name or (cmd[0] if isinstance(cmd, (list, tuple)) else str(cmd))
+        raise ExternalDependencyError(
+            f"Required external tool not found: {name}"
+        ) from exc
+    except subprocess.TimeoutExpired as exc:
+        name = tool_name or (cmd[0] if isinstance(cmd, (list, tuple)) else str(cmd))
+        raise ExternalDependencyError(f"External tool timed out: {name}") from exc
+    except subprocess.CalledProcessError as exc:
+        name = tool_name or (cmd[0] if isinstance(cmd, (list, tuple)) else str(cmd))
+        stderr = exc.stderr.decode(errors="replace") if exc.stderr else ""
+        raise ExternalDependencyError(
+            f"External tool failed (exit {exc.returncode}): {name}\nStderr:\n{stderr}"
+        ) from exc
 
 
 if __name__ == "__main__":
