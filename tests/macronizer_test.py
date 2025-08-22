@@ -221,3 +221,218 @@ def test_addtags_reads_output_from_external_using_tempfiles(
     t.addtags()
     tok = next(tok for tok in t.tokens if tok.isword)
     assert tok.tag == "NOUN"
+
+
+class TestTokenMacronize:
+    """
+    Tests for the Token.macronize method.
+    """
+
+    def test_does_not_crash_on_unknown_word_with_empty_accented_form(self, macronizer):
+        """
+        Scenario: The macronizer has no information for the word "ignotus", so its
+        accented form is an empty string.
+
+        The code should not crash. It should initialize `i` and `j`
+        explicitly and gracefully handle the empty accented form, returning the
+        original plain text.
+        """
+        # arrange: A token for a word with no known macronization
+        token = macronizer.Token("ignotus")
+        token.accented = [""]  # The list of possible accentuations is empty
+
+        # act: Run the macronize function. We use `performutov` to bypass
+        # an early exit
+        token.macronize(
+            domacronize=True, alsomaius=False, performutov=True, performitoj=False
+        )
+
+        # assert: The code returned the original word as expected (no crash)
+        assert token.macronized == "ignotus"
+
+    def test_skeleton_check_bails_out_on_mismatched_words(self, macronizer):
+        """
+        GIVEN a token and an accented form that are fundamentally different words,
+        WHEN macronize is called,
+        THEN it should bail out and return the original plain text.
+        """
+        # Arrange
+        token = macronizer.Token("amica")
+        token.accented = ["ami_cus"]  # Mismatched skeleton
+
+        # Act
+        token.macronize(
+            domacronize=True, alsomaius=False, performutov=False, performitoj=False
+        )
+
+        # Assert
+        assert token.macronized == "amica"
+
+    def test_skeleton_check_allows_ij_orthographic_variants(self, macronizer):
+        """
+        GIVEN a token with 'I' and an accented form with 'j',
+        WHEN macronize is called,
+        THEN it should NOT bail out and should perform the alignment correctly.
+        """
+        # Arrange
+        token = macronizer.Token("Iulius")
+        token.accented = ["ju_lius"]  # Skeleton matches after normalization
+
+        # Act
+        token.macronize(
+            domacronize=True, alsomaius=False, performutov=False, performitoj=True
+        )
+
+        # Assert
+        assert token.macronized == "Ju_lius"
+
+    def test_skeleton_check_allows_uv_orthographic_variants(self, macronizer):
+        """
+        GIVEN a token with 'u' and an accented form with 'v',
+        WHEN macronize is called,
+        THEN it should NOT bail out and should perform the alignment correctly.
+        """
+        # Arrange
+        token = macronizer.Token("uoluit")
+        token.accented = ["vo_lvit"]  # Skeleton matches after normalization
+
+        # Act
+        token.macronize(
+            domacronize=True, alsomaius=False, performutov=True, performitoj=False
+        )
+
+        # Assert
+        assert token.macronized == "vo_lvit"
+
+    def test_handles_trailing_macron_correctly(self, macronizer):
+        """
+        GIVEN an accented form with a macron at the very end,
+        WHEN macronize is called,
+        THEN the final macronized string should include that trailing macron.
+        (This was the primary bug in the original implementation).
+        """
+        # Arrange
+        token = macronizer.Token("porta")
+        token.accented = ["porta_"]
+
+        # Act
+        token.macronize(
+            domacronize=True, alsomaius=False, performutov=False, performitoj=False
+        )
+
+        # Assert
+        assert token.macronized == "porta_"
+
+    def test_handles_leading_macron_correctly(self, macronizer):
+        """
+        This test is synthetic and only checks for correctness of the alignment logic.
+
+        GIVEN an accented form with a leading macron,
+        WHEN macronize is called,
+        THEN the resulting string should correctly include the leading macron.
+        """
+        # Arrange
+        token = macronizer.Token("test")
+        token.accented = ["_test"]
+
+        # Act
+        token.macronize(
+            domacronize=True, alsomaius=False, performutov=False, performitoj=False
+        )
+
+        # Assert
+        assert token.macronized == "_test"
+
+    def test_handles_and_cleans_up_multiple_trailing_macrons(self, macronizer):
+        """
+        GIVEN a malformed accented string with multiple trailing macrons,
+        WHEN macronize is called,
+        THEN it should align them and correctly apply the __ -> _ cleanup rule.
+        """
+        # Arrange
+        token = macronizer.Token("causa")
+        token.accented = ["ca_usa__"]
+
+        # Act
+        token.macronize(
+            domacronize=True, alsomaius=False, performutov=False, performitoj=False
+        )
+
+        # Assert
+        assert token.macronized == "ca_usa_"
+
+    def test_domacronize_false_still_performs_uv_orthography_changes(self, macronizer):
+        """
+        GIVEN domacronize=False but performutov=True,
+        WHEN macronize is called on a word with a 'u'/'v' difference,
+        THEN it should perform the u->v change but not add the macron.
+        """
+        # Arrange
+        token = macronizer.Token("uoluit")
+        token.accented = ["vo_lvit"]
+
+        # Act
+        token.macronize(
+            domacronize=False, alsomaius=False, performutov=True, performitoj=False
+        )
+
+        # Assert
+        assert token.macronized == "volvit"
+
+    def test_domacronize_false_still_performs_ij_orthography_changes(self, macronizer):
+        """
+        GIVEN domacronize=False but performitoj=True,
+        WHEN macronize is called on a word with a 'i'/'j' difference,
+        THEN it should perform the i->j change but not add the macron.
+        """
+        # Arrange
+        token = macronizer.Token("eius")
+        token.accented = ["e_jus"]
+
+        # Act
+        token.macronize(
+            domacronize=False, alsomaius=False, performutov=False, performitoj=True
+        )
+
+        # Assert
+        assert token.macronized == "ejus"
+
+    def test_alsomaius_flag_adds_macron_before_consonantal_j(self, macronizer):
+        """
+        GIVEN the alsomaius flag is True,
+        WHEN macronize is called on a word like 'eius',
+        THEN it should add a macron on the vowel preceding the 'j'.
+        """
+        # Arrange
+        token = macronizer.Token("eius")
+        token.accented = ["ejus"]  # Accented form without the macron
+
+        # Act
+        token.macronize(
+            domacronize=True, alsomaius=True, performutov=False, performitoj=True
+        )
+
+        # Assert
+        # The logic first changes 'ejus' to 'e_jus', then aligns 'eius' to it.
+        assert token.macronized == "e_jus"
+
+    def test_alsomaius_flag_does_not_add_macron_for_known_short_prefixes(
+        self, macronizer
+    ):
+        """
+        GIVEN the alsomaius flag is True,
+        WHEN macronize is called on a word with a known short-j prefix,
+        THEN it should NOT add a macron on the vowel preceding the 'j'.
+        """
+        # Arrange
+        token = macronizer.Token("reiecit")
+        token.accented = ["rejecit"]  # 'rej' is in var prefixeswithshortj
+
+        # Act
+        token.macronize(
+            domacronize=True, alsomaius=True, performutov=False, performitoj=True
+        )
+
+        # Assert
+        # The 'alsomaius' logic should be skipped, and no macron should be added.
+        assert token.macronized == "rejecit"

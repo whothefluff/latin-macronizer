@@ -348,9 +348,13 @@ class Token:
             return
         accented = self.accented[0]
         accented = accented.replace("_^", "").replace("^", "")
+        while "__" in accented:
+            accented = accented.replace("__", "_")
+        # Mark long before consonantal j if requested (excluding known short-j prefixes)
         if domacronize and alsomaius and "j" in accented:
             if not accented.startswith(prefixeswithshortj):
                 accented = re.sub("([aeiouy])(j[aeiouy])", r"\1_\2", accented)
+        # If we're not adding macrons (no underscores) and not doing u→v or i→j, just return original
         if (
             (not domacronize or "_" not in accented)
             and not performutov
@@ -358,25 +362,28 @@ class Token:
         ):
             self.macronized = plain
             return
+        # Enclitic tokens are not macronized (except "ue" when converting u→v)
         if self.isenclitic and not (plain.lower() == "ue" and performutov):
             self.macronized = plain
             return
+        # If the only difference is underscores, we can return quickly
         if plain == accented.replace("_", ""):
-            if domacronize:
-                self.macronized = accented
-            else:
-                self.macronized = plain
+            self.macronized = accented if domacronize else plain
             return
-        # endif
+        # Skeleton check: compare after removing underscores and normalizing to UI orthography + ASCII
+        s_plain = touiorthography(toascii(plain)).lower()
+        s_acc = touiorthography(toascii(accented.replace("_", ""))).lower()
+        if s_plain != s_acc:
+            # Not the same word skeleton; avoid forcing a dubious alignment
+            self.macronized = plain
+            return
 
         def inscost(a):
-            if a == "_":
-                return 0
-            return 2
+            return 0 if a == "_" else 2
 
         def subcost(p, a):
             if a == "_":
-                return 100
+                return 100  # don't "substitute" underscores
             if (a in "IJij" and p in "IJij") or (a in "UVuv" and p in "UVuv"):
                 return 1
             return 2
@@ -384,9 +391,10 @@ class Token:
         def delcost(_):
             return 2
 
+        # Build DP table
         n = len(plain) + 1
         m = len(accented) + 1
-        distance = [[0 for i in range(m)] for j in range(n)]
+        distance = [[0 for _ in range(m)] for _ in range(n)]
         for i in range(1, n):
             distance[i][0] = distance[i - 1][0] + delcost(plain[i - 1])
         for j in range(1, m):
@@ -397,19 +405,23 @@ class Token:
                     distance[i][j] = distance[i - 1][j - 1]
                 else:
                     rghtcost = distance[i - 1][j] + delcost(plain[i - 1])
+                    downcost = distance[i][j - 1] + inscost(accented[j - 1])
                     diagcost = distance[i - 1][j - 1] + subcost(
                         plain[i - 1], accented[j - 1]
                     )
-                    downcost = distance[i][j - 1] + inscost(accented[j - 1])
                     distance[i][j] = min(rghtcost, diagcost, downcost)
+        # Backtrace with explicit flush of remainders
+        i = n - 1
+        j = m - 1
         result = ""
-        while i != 0 and j != 0:
-            upcost = distance[i][j - 1] if j > 0 else 1000
-            diagcost = distance[i - 1][j - 1] if j > 0 and i > 0 else 1000
-            leftcost = distance[i - 1][j] if i > 0 else 1000
-            if (
-                diagcost <= upcost and diagcost < leftcost
-            ):  # To-do: review the comparisons...
+        while i > 0 and j > 0:
+            # Prefer diagonal when ties occur to keep alignment stable
+            same = toascii(plain[i - 1].lower()) == toascii(accented[j - 1].lower())
+            diag_needed = distance[i][j] == distance[i - 1][j - 1] + (
+                0 if same else subcost(plain[i - 1], accented[j - 1])
+            )
+            up_needed = distance[i][j] == distance[i][j - 1] + inscost(accented[j - 1])
+            if diag_needed:
                 i -= 1
                 j -= 1
                 if performutov and accented[j].lower() == "v" and plain[i] == "u":
@@ -422,21 +434,25 @@ class Token:
                     result = "J" + result
                 else:
                     result = plain[i] + result
-            elif upcost <= diagcost and upcost <= leftcost:
+            elif up_needed:
                 j -= 1
                 if domacronize and accented[j] == "_":
                     result = "_" + result
-            else:
+            else:  # Left move
                 i -= 1
                 result = plain[i] + result
+        # Flush any remaining insertions (underscores) from accented
+        while j > 0:
+            j -= 1
+            if domacronize and accented[j] == "_":
+                result = "_" + result
+        # Flush any remaining deletions (characters) from plain
+        while i > 0:
+            i -= 1
+            result = plain[i] + result
         # Some strange morpheus output (e.g. de_e_recti_) may give an additional _ in the result:
         result = result.replace("__", "_")
         self.macronized = result
-
-    # enddef
-
-
-# endclass
 
 
 class Tokenization:
