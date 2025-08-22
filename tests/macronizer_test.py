@@ -436,3 +436,95 @@ class TestTokenMacronize:
         # Assert
         # The 'alsomaius' logic should be skipped, and no macron should be added.
         assert token.macronized == "rejecit"
+
+
+class TestTokenizationScanverses:
+    """
+    Tests for Tokenization.scanverses, focusing on prioritization in possiblescans.
+    """
+
+    @pytest.fixture
+    def scanverses_setup(self, macronizer):
+        """
+        Helper to run a minimal scansion with a single token and a custom automaton.
+        """
+
+        def _setup_and_run(accented_list, automaton=None):
+            if automaton is None:
+                # Neutral automaton: accepts any sequence of L/S with zero penalty.
+                automaton = {(0, "L"): (0, "L", 0), (0, "S"): (0, "S", 0)}
+
+            t = macronizer.Tokenization("")
+            tok = macronizer.Token("word")
+            tok.accented = accented_list[:]  # copy
+            tok.isword = True
+
+            t.tokens = [tok]
+            t.scanverses([automaton])
+            return t.tokens[0].accented[0]
+
+        return _setup_and_run
+
+    def test_regression_single_candidate_no_ambiguity(self, scanverses_setup):
+        """
+        One unambiguous candidate should remain selected.
+        """
+        selected = scanverses_setup(accented_list=["ba_"])
+        assert selected == "ba_"
+
+    def test_regression_two_candidates_order_preserved_with_neutral_meter(
+        self, scanverses_setup
+    ):
+        """
+        Two unambiguous candidates: the first is preferred.
+        """
+        selected = scanverses_setup(accented_list=["ba_", "ba"])
+        assert selected == "ba_"
+
+    def test_new_behavior_ambiguous_variants_are_not_penalized(self, scanverses_setup):
+        """
+        Variants of the same ambiguous candidate ('ba_^' -> ['ba', 'ba_'])
+        should not be reprioritized. With equal penalties, the 'L' scansion ('ba_')
+        should win over the 'S' scansion ('ba') due to ordering in possiblescans.
+        """
+        selected = scanverses_setup(accented_list=["ba_^"])
+        assert selected == "ba_"
+
+    def test_new_behavior_mixed_candidates_prioritization(self, scanverses_setup):
+        """
+        Variants of the top candidate ('ba_^') should be preferred over a lower-ranked
+        second candidate ('ba_'). We still expect the selected accented form to come
+        from the first candidate's expansion.
+        """
+        selected = scanverses_setup(accented_list=["ba_^", "ba_"])
+        assert selected == "ba_"
+
+    def test_meter_can_override_ambiguous_variant_preference(self, scanverses_setup):
+        """
+        A meter penalty can force the short ('ba') to be chosen over the long ('ba_'),
+        even when both variants belong to the top candidate.
+        """
+        meter_prefers_short = {
+            (0, "S"): (0, "S", 0),  # No penalty for short
+            (0, "L"): (0, "L", 5),  # High penalty for long
+        }
+        selected = scanverses_setup(
+            accented_list=["ba_^"], automaton=meter_prefers_short
+        )
+        assert selected == "ba"
+
+    def test_strong_meter_can_override_lexical_preference(self, scanverses_setup):
+        """
+        A strong meter penalty can overcome REPRIORITIZE_PENALTY to select
+        a lower-ranked candidate ('ba' over 'ba_').
+        """
+        meter_prefers_short = {
+            (0, "S"): (0, "S", 0),  # Penalty 0
+            (0, "L"): (0, "L", 5),  # Penalty 5
+        }
+        # 'ba_': base 0 + meter 5 = 5
+        # 'ba' : base 1 + meter 0 = 1  <-- wins
+        selected = scanverses_setup(
+            accented_list=["ba_", "ba"], automaton=meter_prefers_short
+        )
+        assert selected == "ba"

@@ -901,100 +901,113 @@ class Tokenization:
         # enddef
 
         def possiblescans(accentedcandidates, followingsegment):
-            """A form with marked vowel lengths can be scanned differently, considering
+            """
+            A form with marked vowel lengths can be scanned differently, considering
             muta cum liquida, diphthong vs. diaeresis, elision, etc.
+
             input: followingsegment is one of ["V", "C", "CC", "#"]
-            returns: [(penalty, scansion, accented), ...]"""
-            isfirstaccented = True
+            returns: [(penalty, scansion, accented), ...]
+            """
             scans = []
-            for accented in separate_ambiguous_vowels(accentedcandidates):
-                segments = segmentaccented(accented)
-                segments.append(followingsegment)
-                basepenalty = 0 if isfirstaccented else self.REPRIORITIZE_PENALTY
-                temps = [(basepenalty, "")]
-                for i, thisseg in enumerate(segments):
-                    prevseg = "#" if i == 0 else segments[i - 1]
-                    nextseg = "#" if i == len(segments) - 1 else segments[i + 1]
-                    if i == 0 and not thisseg[0] in "aeiouy":
-                        continue
-                    news = []
-                    for penaltysofar, scansofar in temps:
-                        if "_" in thisseg:
-                            news.append((penaltysofar, scansofar + "L"))
-                        elif thisseg in ["ae", "au", "ei", "oe", "eu"]:
-                            news.append((penaltysofar, scansofar + "L"))
-                            news.append(
-                                (
-                                    penaltysofar + self.DIAERESIS_PENALTY,
-                                    scansofar + "VV",
+            # Iterate over top-level candidates in the priority order given by getaccents
+            for cand_idx, base_accented in enumerate(accentedcandidates):
+                # Expand only this candidate’s ambiguous vowels (_^) into per-variant accenteds
+                variants = separate_ambiguous_vowels([base_accented])
+                # Apply reprioritization penalty per candidate, not per variant
+                basepenalty = 0 if cand_idx == 0 else self.REPRIORITIZE_PENALTY
+
+                for accented in variants:
+                    segments = segmentaccented(accented)
+                    segments.append(followingsegment)
+
+                    temps = [(basepenalty, "")]
+                    for i, thisseg in enumerate(segments):
+                        prevseg = "#" if i == 0 else segments[i - 1]
+                        nextseg = "#" if i == len(segments) - 1 else segments[i + 1]
+                        if i == 0 and not thisseg[0] in "aeiouy":
+                            # Skip leading consonant clusters at word start
+                            continue
+                        news = []
+                        for penaltysofar, scansofar in temps:
+                            if "_" in thisseg:
+                                news.append((penaltysofar, scansofar + "L"))
+                            elif thisseg in ["ae", "au", "ei", "oe", "eu"]:
+                                news.append((penaltysofar, scansofar + "L"))
+                                news.append(
+                                    (
+                                        penaltysofar + self.DIAERESIS_PENALTY,
+                                        scansofar + "VV",
+                                    )
                                 )
-                            )
-                        elif (
-                            (prevseg.endswith("s") or prevseg.endswith("ng"))
-                            and thisseg == "u"
-                            and nextseg[0] in "aeiouy"
-                        ):
-                            news.append((penaltysofar, scansofar + "C"))
-                            news.append(
-                                (
-                                    penaltysofar + self.NO_SYNEZIS_PENALTY,
-                                    scansofar + "V",
-                                )
-                            )
-                        elif thisseg[0] in "ui" and (
-                            nextseg[0] in "aeiouy" or prevseg[0] in "aeiouy"
-                        ):
-                            news.append((penaltysofar, scansofar + "V"))
-                            news.append(
-                                (penaltysofar + self.SYNEZIS_PENALTY, scansofar + "C")
-                            )
-                        elif thisseg[0] in "aeiouy":
-                            news.append((penaltysofar, scansofar + "V"))
-                        elif thisseg == "m" and nextseg in ["V", "C", "CC", "#"]:
-                            news.append((penaltysofar, scansofar + "M"))
-                        elif thisseg == "j" and prevseg != "#":
-                            if accented.startswith(prefixeswithshortj):
+                            elif (
+                                (prevseg.endswith("s") or prevseg.endswith("ng"))
+                                and thisseg == "u"
+                                and nextseg[0] in "aeiouy"
+                            ):
                                 news.append((penaltysofar, scansofar + "C"))
+                                news.append(
+                                    (
+                                        penaltysofar + self.NO_SYNEZIS_PENALTY,
+                                        scansofar + "V",
+                                    )
+                                )
+                            elif thisseg[0] in "ui" and (
+                                nextseg[0] in "aeiouy" or prevseg[0] in "aeiouy"
+                            ):
+                                news.append((penaltysofar, scansofar + "V"))
+                                news.append(
+                                    (
+                                        penaltysofar + self.SYNEZIS_PENALTY,
+                                        scansofar + "C",
+                                    )
+                                )
+                            elif thisseg[0] in "aeiouy":
+                                news.append((penaltysofar, scansofar + "V"))
+                            elif thisseg == "m" and nextseg in ["V", "C", "CC", "#"]:
+                                news.append((penaltysofar, scansofar + "M"))
+                            elif thisseg == "j" and prevseg != "#":
+                                if accented.startswith(prefixeswithshortj):
+                                    news.append((penaltysofar, scansofar + "C"))
+                                else:
+                                    news.append((penaltysofar, scansofar + "CC"))
+                            elif thisseg == "V":  # next word begins with vowel
+                                if scansofar.endswith("V") or scansofar.endswith("L"):
+                                    news.append((penaltysofar, scansofar[:-1]))
+                                    news.append(
+                                        (penaltysofar + self.HIATUS_PENALTY, scansofar)
+                                    )
+                                elif scansofar.endswith("M"):
+                                    news.append((penaltysofar, scansofar[:-2]))
+                                    news.append(
+                                        (penaltysofar + self.HIATUS_PENALTY, scansofar)
+                                    )
+                                else:
+                                    news.append((penaltysofar, scansofar))
+                            elif thisseg == "#":
+                                news.append((penaltysofar, scansofar))
+                            elif len(thisseg) == 1:
+                                news.append((penaltysofar, scansofar + "C"))
+                            elif (
+                                len(thisseg) == 2
+                                and thisseg[0] in "tpcdbgf"
+                                and thisseg[1] in "rl"
+                            ):
+                                news.append((penaltysofar, scansofar + "C"))
+                                news.append(
+                                    (
+                                        penaltysofar + self.MUTA_CUM_LIQUIDA_PENALTY,
+                                        scansofar + "CC",
+                                    )
+                                )
                             else:
                                 news.append((penaltysofar, scansofar + "CC"))
-                        elif thisseg == "V":  # next word begins with vowel
-                            if scansofar.endswith("V") or scansofar.endswith("L"):
-                                news.append((penaltysofar, scansofar[:-1]))
-                                news.append(
-                                    (penaltysofar + self.HIATUS_PENALTY, scansofar)
-                                )
-                            elif scansofar.endswith("M"):
-                                news.append((penaltysofar, scansofar[:-2]))
-                                news.append(
-                                    (penaltysofar + self.HIATUS_PENALTY, scansofar)
-                                )
-                            else:
-                                news.append((penaltysofar, scansofar))
-                        elif thisseg == "#":
-                            news.append((penaltysofar, scansofar))
-                        elif len(thisseg) == 1:
-                            news.append((penaltysofar, scansofar + "C"))
-                        elif (
-                            len(thisseg) == 2
-                            and thisseg[0] in "tpcdbgf"
-                            and thisseg[1] in "rl"
-                        ):
-                            news.append((penaltysofar, scansofar + "C"))
-                            news.append(
-                                (
-                                    penaltysofar + self.MUTA_CUM_LIQUIDA_PENALTY,
-                                    scansofar + "CC",
-                                )
-                            )
-                        else:
-                            news.append((penaltysofar, scansofar + "CC"))
-                    temps = news
-                for penalty, scansion in temps:
-                    scansion = re.sub("VMC*|VCCC*|LM?C*", "L", scansion)
-                    scansion = re.sub("VC?", "S", scansion)
-                    scansion = re.sub("^C*", "", scansion)
-                    scans.append((penalty, scansion, accented))
-                isfirstaccented = False
+                        temps = news
+                    for penalty, scansion in temps:
+                        scansion = re.sub("VMC*|VCCC*|LM?C*", "L", scansion)
+                        scansion = re.sub("VC?", "S", scansion)
+                        scansion = re.sub("^C*", "", scansion)
+                        scans.append((penalty, scansion, accented))
+            # De-duplicate by scansion, preferring lower penalty (then lexicographically)
             filteredscans = []
             foundscansions = set()
             for penalty, scansion, accented in sorted(scans):
@@ -1002,8 +1015,6 @@ class Tokenization:
                     filteredscans.append((penalty, scansion, accented))
                     foundscansions.add(scansion)
             return filteredscans
-
-        # enddef
 
         def scanverse(verse, automaton):
             """Input: The "verse" is a complicated list of the format
