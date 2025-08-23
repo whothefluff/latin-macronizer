@@ -201,39 +201,41 @@ def test_crunchwords_sets_morphlib_env(macronizer, tmp_path, monkeypatch):
     assert observed_env.get("MORPHLIB") == str(tmp_path / "stemlib")
 
 
-def test_addtags_raises_when_rft_annotate_missing(macronizer, monkeypatch):
+def test_addtags_raises_when_rft_annotate_missing(macronizer):
     t = macronizer.Tokenization("arma virumque cano")
-    # Point to non-existent dir => binary not found
-    monkeypatch.setattr(macronizer, "RFTAGGER_DIR", "/definitely/missing")
+    non_existent_dir = "/definitely/missing"
 
-    with pytest.raises(macronizer.ExternalDependencyError) as ei:
-        t.addtags()
-    assert "rft" in str(ei.value)
-    assert "not found or not executable" in str(ei.value)
+    with pytest.raises(macronizer.ExternalDependencyError) as exc_info:
+        t.addtags(rftagger_dir=non_existent_dir)
+    expected_path_in_error = os.path.join(non_existent_dir, "rft-annotate")
+    assert "not found or not executable" in str(exc_info.value)
+    assert expected_path_in_error in str(exc_info.value)
 
 
 def test_addtags_reads_output_from_external_using_tempfiles(
-    macronizer, tmp_path, monkeypatch
+    macronizer, tmp_path, mocker
 ):
     # Single word tokenization; no sentence-end, no enclitics
     t = macronizer.Tokenization("arma")
 
-    # Provide executable rft-annotate so path check passes
-    rft = tmp_path / "rft-annotate"
-    rft.write_text("", encoding="utf-8")
-    os.chmod(rft, 0o755)
-    monkeypatch.setattr(macronizer, "RFTAGGER_DIR", str(tmp_path))
+    # Create a dummy rftagger directory and a fake executable inside it
+    dummy_rftagger_dir = tmp_path / "rftagger"
+    dummy_rftagger_dir.mkdir()
+    rft_annotate_path = dummy_rftagger_dir / "rft-annotate"
+    rft_annotate_path.touch(mode=0o755)  # Mark as executable
 
-    # Fake external tool writes the expected "token<TAB>tag" line to out path
+    # Mock the external command runner to fake the tool's behavior
     def fake_run(cmd, **_kwargs):
+        # The command should include the full path to our fake executable
+        assert cmd[0] == str(rft_annotate_path)
         out_path = cmd[-1]
         with open(out_path, "w", encoding="utf-8") as f:
             f.write("arma\tNOUN\n")
 
-    monkeypatch.setattr(macronizer, "run_external", fake_run)
+    mocker.patch("macronizer.run_external", side_effect=fake_run)
 
-    t.addtags()
-    tok = next(tok for tok in t.tokens if tok.isword)
+    t.addtags(rftagger_dir=str(dummy_rftagger_dir))
+    tok = next(token for token in t.tokens if token.isword)
     assert tok.tag == "NOUN"
 
 
