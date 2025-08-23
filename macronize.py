@@ -68,7 +68,7 @@ def create_html_page(
         macronizedtext = ""
     else:
         try:
-            macronizer = Macronizer()
+            macronizer = Macronizer("config.ini")
             macronizer.settext(texttomacronize)
             if scan > 0:
                 macronizer.scan(SCANSIONS[scan][1])
@@ -371,11 +371,16 @@ def main_cli() -> None:
         action="store_true",
         help="test accuracy against input gold standard",
     )
+    parser.add_argument(
+        "-c", "--config",
+        default="config.ini",
+        help="Path to the configuration file"
+    )
     args = parser.parse_args()
 
     if args.initialize:
         try:
-            macronizer = Macronizer()
+            macronizer = Macronizer(args.config)
             macronizer.wordlist.reinitializedatabase()
         except Exception as inst:
             print(inst.args[0])
@@ -387,7 +392,7 @@ def main_cli() -> None:
             print(f"{i}: {description}")
         exit(0)
 
-    macronizer = Macronizer()
+    macronizer = Macronizer(args.config)
     if args.test:
         texttomacronize = "O orbis terrarum te saluto!\n"
     else:

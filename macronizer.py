@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import configparser
 import os
 import re
 import sqlite3
@@ -30,7 +31,6 @@ from macronized_endings import tag_to_endings
 
 USE_DB = True
 DB_NAME = "macronizer.db"
-RFTAGGER_DIR = "/usr/local/bin"
 MORPHEUS_DIR = os.path.join(os.path.dirname(__file__), "morpheus")
 MACRONS_FILE = os.path.join(os.path.dirname(__file__), "macrons.txt")
 
@@ -641,7 +641,7 @@ class Tokenization:
 
     # enddef
 
-    def addtags(self):
+    def addtags(self, rftagger_dir: str) -> None:
         with NamedTemporaryFile(
             "w+", encoding="utf-8", delete=True
         ) as totaggerfile, NamedTemporaryFile(
@@ -672,7 +672,7 @@ class Tokenization:
                 os.path.dirname(__file__), "rftagger-ldt.model"
             )
             # Resolve rft-annotate path
-            rft_annotate = os.path.join(RFTAGGER_DIR, "rft-annotate")
+            rft_annotate = os.path.join(rftagger_dir, "rft-annotate")
             if not (os.path.isfile(rft_annotate) and os.access(rft_annotate, os.X_OK)):
                 raise ExternalDependencyError(
                     f"RFTagger 'rft-annotate' not found or not executable: {rft_annotate}"
@@ -1329,7 +1329,11 @@ class Macronizer:
         (13, "S"): (0, "u", 0),
     }
 
-    def __init__(self):
+    def __init__(self, config_path: str):
+        config = configparser.ConfigParser()
+        config.read(config_path)
+        self.rftagger_dir = config.get("paths", "rftagger_dir", fallback="")
+
         self.wordlist = Wordlist()
         self.tokenization = Tokenization("")
 
@@ -1340,7 +1344,7 @@ class Macronizer:
         self.wordlist.loadwords(self.tokenization.allwordforms())
         newwordforms = self.tokenization.splittokens(self.wordlist)
         self.wordlist.loadwords(newwordforms)
-        self.tokenization.addtags()
+        self.tokenization.addtags(self.rftagger_dir)
         self.tokenization.addlemmas(self.wordlist)
         self.tokenization.getaccents(self.wordlist)
 

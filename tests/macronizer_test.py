@@ -59,6 +59,20 @@ def macronizer_fixture(
     return mod
 
 
+@pytest.fixture(name="create_config_ini")
+def create_config_ini_fixture(tmp_path):
+    """
+    A fixture that creates a temporary config.ini file and returns its path.
+    """
+
+    def _create(content: str):
+        config_file = tmp_path / "test_config.ini"
+        config_file.write_text(content, encoding="utf-8")
+        return str(config_file)
+
+    return _create
+
+
 def test_run_external_maps_filenotfound(macronizer, monkeypatch):
 
     def raise_fnf(*_a, **_k):
@@ -528,3 +542,64 @@ class TestTokenizationScanverses:
             accented_list=["ba_", "ba"], automaton=meter_prefers_short
         )
         assert selected == "ba"
+
+
+def test_macronizer_init_stores_rftagger_dir_from_config(macronizer, create_config_ini):
+    """
+    Verifies that Macronizer.__init__ correctly reads the config file
+    and stores the value in the `rftagger_dir` attribute.
+    """
+    # Arrange
+    ini_content = "[paths]\nrftagger_dir = /path/from/config"
+    config_path = create_config_ini(ini_content)
+
+    # Act
+    mz = macronizer.Macronizer(config_path=config_path)
+
+    # Assert
+    assert mz.rftagger_dir == "/path/from/config"
+
+
+def test_macronizer_settext_passes_configured_path_to_addtags(macronizer, mocker):
+    """
+    Verifies that Macronizer.settext calls tokenization.addtags
+    using the value stored in `self.rftagger_dir`.
+    """
+    # Arrange
+    mz = macronizer.Macronizer(config_path="dummy.ini")
+    mz.rftagger_dir = "/path/stored/in/self"
+
+    # We only need to mock two things:
+    # 1. The Wordlist method that hits the database.
+    # 2. The Tokenization class to intercept the `addtags` call.
+    mocker.patch.object(mz.wordlist, "loadwords")
+
+    # Create a mock instance that will be returned when Tokenization() is called.
+    mock_tokenization_instance = mocker.MagicMock()
+    mocker.patch("macronizer.Tokenization", return_value=mock_tokenization_instance)
+
+    # Act
+    mz.settext("some text")
+
+    # Assert
+    mock_tokenization_instance.addtags.assert_called_once_with("/path/stored/in/self")
+
+
+def test_tokenization_addtags_uses_provided_dir_to_build_executable_path(macronizer):
+    """
+    Verifies that Tokenization.addtags uses the `rftagger_dir` argument
+    it receives to construct the path to the external executable.
+    """
+    # Arrange
+    tokenization = macronizer.Tokenization("test")
+    non_existent_dir = "/this/path/definitely/does/not/exist"
+
+    # Act & Assert
+    # We expect an error because the path is invalid. We check that the
+    # error message contains the correctly constructed path, which proves
+    # the argument was used as intended.
+    with pytest.raises(macronizer.ExternalDependencyError) as exc_info:
+        tokenization.addtags(rftagger_dir=non_existent_dir)
+
+    expected_path_in_error = os.path.join(non_existent_dir, "rft-annotate")
+    assert expected_path_in_error in str(exc_info.value)
