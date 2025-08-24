@@ -63,7 +63,7 @@ def create_html_page(
         macronizedtext = ""
     else:
         try:
-            macronizer = Macronizer("config.ini")
+            macronizer = Macronizer()
             macronizer.settext(texttomacronize)
             if scan > 0:
                 macronizer.scan(SCANSIONS[scan][1])

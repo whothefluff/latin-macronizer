@@ -1330,7 +1330,7 @@ class Macronizer:
         (13, "S"): (0, "u", 0),
     }
 
-    def __init__(self, config_path: str):
+    def __init__(self, config_path: str = os.path.join(SCRIPT_DIR, "config.ini")):
         config = configparser.ConfigParser()
         config.read(config_path)
         self.rftagger_dir = config.get("paths", "rftagger_dir", fallback="")

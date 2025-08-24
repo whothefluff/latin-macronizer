@@ -121,9 +121,9 @@ def test_main_cli_initialization_does_not_error_on_missing_config_file(
     mock_macronizer.assert_called_once_with(non_existent_path)
 
 
-def test_main_cgi_initializes_macronizer_with_hardcoded_config(mocker, monkeypatch):
+def test_main_cgi_initializes_macronizer_with_default_config(mocker, monkeypatch):
     """
-    Verifies that main_cgi() instantiates Macronizer with the hardcoded "config.ini" path.
+    Verifies that main_cgi() instantiates Macronizer with the default path arg.
     """
     # Arrange
     # Mock the necessary CGI environment variable for the function to run.
@@ -151,4 +151,4 @@ def test_main_cgi_initializes_macronizer_with_hardcoded_config(mocker, monkeypat
     macronize.main_cgi()
 
     # Assert
-    mock_macronizer.assert_called_once_with("config.ini")
+    mock_macronizer.assert_called_once_with()
