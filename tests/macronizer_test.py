@@ -707,3 +707,23 @@ class TestWordlist:
         msg = str(exc_info.value)
         assert "Query failed" in msg
         assert "mocked DB failure" in msg
+
+
+def test_token_show_prints_correctly_formatted_output(macronizer, capsys):
+    """
+    This test verifies the the output sent to stdout is correctly formatted.
+    """
+    # Arrange
+    token = macronizer.Token("arma")
+    token.tag = "NOUN"
+    token.lemma = "arma"
+    token.accented = ["arma_"]
+    expected_string = "arma\tNOUN\tarma\tarma_"
+    expected_output = expected_string.expandtabs(16) + "\n"  # print() adds a newline
+
+    # Act
+    token.show()
+    captured = capsys.readouterr()  # Capture what was printed
+
+    # Assert
+    assert captured.out == expected_output

@@ -337,8 +337,10 @@ class Token:
 
     def show(self):
         print(
-            "\t".join([self.text, self.tag, self.lemma, self.accented[0]])
-        ).expandtabs(16)
+            "\t".join(
+                [self.text, self.tag, self.lemma, self.accented[0]],
+            ).expandtabs(16)
+        )
 
     # enddef
 
