@@ -1406,10 +1406,8 @@ def evaluate(goldstandard, macronizedtext):
             outtext.append(escape(b))
         else:
             outtext.append(f'<span class="wrong">{b}</span>')
-    return lengthcorrect / float(vowelcount), "".join(outtext)
-
-
-# enddef
+    # If there are no vowels, and the texts matched, accuracy is arguably 100%
+    return lengthcorrect / float(vowelcount) if vowelcount else 1.0, "".join(outtext)
 
 
 def run_external(

@@ -605,3 +605,60 @@ def test_tokenization_addtags_uses_provided_dir_to_build_executable_path(macroni
 
     expected_path_in_error = os.path.join(non_existent_dir, "rft-annotate")
     assert expected_path_in_error in str(exc_info.value)
+
+
+def test_evaluate_calculates_accuracy_correctly_with_stub(macronizer, mocker):
+    """
+    Tests the evaluate function with a mix of correct and incorrect vowels.
+    """
+
+    def stub_remove_macrons(text):
+        macron_map = str.maketrans("āēīōūȳăĕĭŏŭ", "aeiouyaeiou")
+        return text.translate(macron_map)
+
+    mocker.patch("macronizer.postags.removemacrons", side_effect=stub_remove_macrons)
+
+    # Arrange
+    gold = "canō"
+    macronized = "cano"
+
+    # Act
+    accuracy, html_output = macronizer.evaluate(gold, macronized)
+
+    # Assert
+    assert accuracy == 0.5
+    expected_html = 'can<span class="wrong">o</span>'
+    assert html_output == expected_html
+
+
+def test_evaluate_handles_no_vowels_gracefully(macronizer):
+    """
+    Tests that the evaluate function returns 1.0 accuracy
+    as there are no vowels to be incorrect about.
+    """
+    # Arrange
+    gold = "psst"
+    macronized = "psst"
+
+    # Act
+    accuracy, html_output = macronizer.evaluate(gold, macronized)
+
+    # Assert
+    assert accuracy == 1.0
+    assert html_output == "psst"
+
+
+def test_evaluate_raises_on_text_mismatch(macronizer):
+    """
+    Tests that evaluate() raises an InvalidArgumentError if the underlying
+    plain text of the two strings does not match.
+    """
+    # Arrange
+    gold = "arma"
+    macronized = "arms"  # Mismatched last character
+
+    # Act & Assert
+    with pytest.raises(macronizer.InvalidArgumentError) as exc_info:
+        macronizer.evaluate(gold, macronized)
+
+    assert "Text mismatch" in str(exc_info.value)
