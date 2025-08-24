@@ -727,3 +727,45 @@ def test_token_show_prints_correctly_formatted_output(macronizer, capsys):
 
     # Assert
     assert captured.out == expected_output
+
+
+def test_tokenization_scanverses_handles_elision_correctly(macronizer):
+    """
+    Regression Test for the `followingtext` vowel-peeking logic.
+
+    This test verifies that elision is handled correctly. A word ending
+    in a vowel ('vita') should have its final syllable elided when the
+    next word begins with a vowel ('est').
+
+    - 'vi_ta' is Long-Short. Elision leaves the first syllable 'vīt-' (L).
+    - 'est' is long by position because the vowel 'e' is followed by 'st' (L).
+    - The correct elided scansion is therefore 'LL'.
+    """
+    # Arrange
+    tokenization = macronizer.Tokenization("vita est")
+
+    # Manually set up tokens with explicit accentuation for a deterministic test.
+    tok1 = macronizer.Token("vita")
+    tok1.isword = True
+    tok1.accented = ["vi_ta"]  # Explicitly Long-Short
+
+    tok2 = macronizer.Token("est")
+    tok2.isword = True
+    tok2.accented = ["est"]    # Vowel is short, but syllable is long by position
+
+    tokenization.tokens = [tok1, macronizer.Token(" "), tok2]
+
+    # This automaton defines a valid verse as a simple "LL" sequence.
+    # It will accept the elided scansion and reject any other path.
+    # The tuples are (next_state, foot_to_append, penalty).
+    meter = {
+        (0, "L"): (1, "L", 0),  # From start (0), on 'L', go to state 1.
+        (1, "L"): (0, "L", 0),  # From state 1, on 'L', go to end (0).
+    }
+
+    # Act
+    tokenization.scanverses([meter])
+
+    # Assert
+    # The winning scansion path must be the elided one, resulting in "LL".
+    assert tokenization.scannedfeet == ["LL"]

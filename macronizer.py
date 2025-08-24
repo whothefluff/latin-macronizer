@@ -1085,7 +1085,7 @@ class Tokenization:
                         followingtext += " "
                     elif self.tokens[nextindex].isword:
                         followingtext += self.tokens[nextindex].accented[0]
-                        if "aeiouy" in followingtext:
+                        if any(ch in "aeiouy" for ch in followingtext):
                             break
                 followingtext = followingtext.lower().replace("h", "")
                 if followingtext == "":
