@@ -171,9 +171,9 @@ class Wordlist:
                     "SELECT wordform, morphtag, lemma, accented FROM morpheus WHERE wordform = ?",
                     (word,),
                 )
-            except Exception as exc:
+            except sqlite3.Error as exc:
                 raise DatabaseError(
-                    "Database table is missing. Please reset the database using --initialize."
+                    f"Query failed '{exc}'. If the database is missing, reset it using --initialize."
                 ) from exc
             rows = self.dbcursor.fetchall()
             if len(rows) == 0:

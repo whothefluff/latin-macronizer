@@ -1,5 +1,6 @@
 import importlib
 import os
+import sqlite3
 import subprocess
 import sys
 import types
@@ -662,3 +663,47 @@ def test_evaluate_raises_on_text_mismatch(macronizer):
         macronizer.evaluate(gold, macronized)
 
     assert "Text mismatch" in str(exc_info.value)
+
+
+class TestWordlist:
+    """Tests for the `Wordlist` class."""
+
+    def test_loadwordfromdb_raises_unrelated_errors_directly(
+        self, macronizer, mocker, monkeypatch
+    ):
+        """
+        Verifies that a non-database error is not caught and masked.
+        """
+        # Arrange
+        wl = macronizer.Wordlist()
+        mock_cursor = mocker.MagicMock()
+        mock_cursor.execute.side_effect = TypeError("A programming mistake!")
+        monkeypatch.setattr(wl, "dbcursor", mock_cursor)
+
+        # Act & Assert
+        with pytest.raises(TypeError) as exc_info:
+            wl.loadwordfromdb("some_word")
+
+        assert "A programming mistake!" in str(exc_info.value)
+        assert not isinstance(exc_info.value, macronizer.DatabaseError)
+
+    def test_loadwordfromdb_converts_sqlite_error_to_database_error(
+        self, macronizer, mocker, monkeypatch
+    ):
+        """
+        Verifies that a genuine sqlite3.Error is correctly caught and re-raised.
+        """
+        # Arrange
+        wl = macronizer.Wordlist()
+        mock_cursor = mocker.MagicMock()
+        mock_error = sqlite3.OperationalError("mocked DB failure")
+        mock_cursor.execute.side_effect = mock_error
+        monkeypatch.setattr(wl, "dbcursor", mock_cursor)
+
+        # Act & Assert
+        with pytest.raises(macronizer.DatabaseError) as exc_info:
+            wl.loadwordfromdb("some_word")
+
+        msg = str(exc_info.value)
+        assert "Query failed" in msg
+        assert "mocked DB failure" in msg
