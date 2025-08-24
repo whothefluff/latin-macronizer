@@ -26,8 +26,6 @@ from typing import List, Tuple
 
 from macronizer import Macronizer, evaluate
 
-MACRONIZER_LIB = "."
-
 SCANSIONS: List[Tuple[str, List[Macronizer.ScansionRules]]] = [
     ("prose (no scansion)", []),
     ("dactylic hexameters", [Macronizer.dactylichexameter]),
@@ -40,9 +38,6 @@ SCANSIONS: List[Tuple[str, List[Macronizer.ScansionRules]]] = [
 ]
 TRUNCATETHRESHOLD = 50000  # Set to -1 to disable
 DEBUGCOMMAND = "DEBUG\n"
-
-
-sys.path.append(MACRONIZER_LIB)
 
 
 def create_html_page(
@@ -333,6 +328,7 @@ def main_cgi() -> None:
             doevaluate,
         )
     )
+
 
 def main_cli() -> None:
     parser = argparse.ArgumentParser()

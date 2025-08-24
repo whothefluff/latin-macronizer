@@ -30,9 +30,10 @@ from lemmas import lemma_frequency, word_lemma_freq, wordform_to_corpus_lemmas
 from macronized_endings import tag_to_endings
 
 USE_DB = True
-DB_NAME = "macronizer.db"
-MORPHEUS_DIR = os.path.join(os.path.dirname(__file__), "morpheus")
-MACRONS_FILE = os.path.join(os.path.dirname(__file__), "macrons.txt")
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_NAME = os.path.join(SCRIPT_DIR, "macronizer.db")
+MORPHEUS_DIR = os.path.join(SCRIPT_DIR, "morpheus")
+MACRONS_FILE = os.path.join(SCRIPT_DIR, "macrons.txt")
 
 
 class MacronizerError(Exception):
