@@ -890,3 +890,42 @@ def test_evaluate_raises_on_mismatched_lengths(
     assert (
         "length" in str(exc_info.value).lower()
     ), f"Test failed for case: {description}"
+
+
+def test_scanverse_handles_penalties_greater_than_100(macronizer):
+    """
+    Verifies that the scansion algorithm can find a valid path even if its
+    total penalty exceeds 100.
+
+    This test provides two possible accented forms for a word:
+    1. "a_": Scans as 'L'. This is the lexically preferred form (base penalty 0).
+    2. "a":  Scans as 'S'. This is the disfavored form (base penalty 1).
+
+    We then provide a meter that strongly prefers 'S' over 'L':
+    - It REJECTS the 'L' scansion entirely by having no valid transition for it.
+    - It ACCEPTS the 'S' scansion but applies a high meter penalty (101).
+
+    The total penalty for the only valid path ('S') is:
+    1 (lexical REPRIORITIZE_PENALTY) + 101 (meter penalty) = 102.
+    """
+    # Arrange
+    tokenization = macronizer.Tokenization("word")
+
+    # Manually set up a token with two competing accentuations that will be
+    # correctly parsed by the real `segmentaccented` function.
+    token = macronizer.Token("word")
+    token.isword = True
+    token.accented = ["a_", "a"]  # "a_" has priority; "a" is the fallback.
+    tokenization.tokens = [token]
+
+    # This meter rejects 'L' and accepts 'S' with a very high penalty.
+    meter = {
+        # No path for 'L', so it's an invalid scansion.
+        (0, "S"): (0, "S", 101)  # Path for 'S' is valid, but costs 101.
+    }
+
+    # Act
+    tokenization.scanverses([meter])
+
+    # Assert
+    assert tokenization.scannedfeet == ["S"]

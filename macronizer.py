@@ -1033,7 +1033,7 @@ class Tokenization:
                 (tokenindex, wordscansions) = verse[wordindex]
                 besttail = []
                 besttailfeet = []
-                besttailpenalty = 100
+                besttailpenalty = float("inf")
                 for scanpenalty, scansion, accented in wordscansions:
                     nodeindex = oldnodeindex
                     feet = []
