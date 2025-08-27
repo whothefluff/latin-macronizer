@@ -113,9 +113,10 @@ CREATE TABLE morpheus(
     morphtag TEXT,
     lemma TEXT,
     accented TEXT,
+    was_crunched INTEGER DEFAULT FALSE,
     PRIMARY KEY( wordform, morphtag, lemma, accented )
 ) STRICT, WITHOUT ROWID;
-        """
+"""
         )
         self.loadwordsfromfile(MACRONS_FILE, storeindb=True)
         self.dbconn.commit()
@@ -267,14 +268,14 @@ CREATE TABLE morpheus(
                     lemmatagtoaccenteds[(lemma, tag)] = bestaccented
                 for (lemma, tag), accented in lemmatagtoaccenteds.items():
                     self.dbcursor.execute(
-                        "INSERT OR IGNORE INTO morpheus (wordform, morphtag, lemma, accented) VALUES (?, ?, ?, ?)",
-                        (wordform, tag, lemma, accented),
+                        "INSERT OR IGNORE INTO morpheus (wordform, morphtag, lemma, accented, was_crunched) VALUES (?, ?, ?, ?, ?)",
+                        (wordform, tag, lemma, accented, True),
                     )
             # The remaining were unknown to Morpheus:
             for wordform in words - knownwords:
                 self.dbcursor.execute(
-                    "INSERT OR IGNORE INTO morpheus (wordform, morphtag, lemma, accented) VALUES (?, '', '', '')",
-                    (wordform,),
+                    "INSERT OR IGNORE INTO morpheus (wordform, morphtag, lemma, accented, was_crunched) VALUES (?, '', '', '', ?)",
+                    (wordform, True),
                 )
 
             self.dbconn.commit()
