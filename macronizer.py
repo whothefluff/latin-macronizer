@@ -1393,6 +1393,11 @@ class Macronizer:
 
 
 def evaluate(goldstandard, macronizedtext):
+    if len(goldstandard) != len(macronizedtext):
+        raise InvalidArgumentError(
+            f"Error: Text mismatch. Gold standard length ({len(goldstandard)}) "
+            f"does not match macronized text length ({len(macronizedtext)})."
+        )
     vowelcount = 0
     lengthcorrect = 0
     outtext = []

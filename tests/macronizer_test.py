@@ -864,3 +864,29 @@ def test_crunchwords_parsing_raises_on_dangling_word(macronizer, monkeypatch):
     # Act & Assert
     with pytest.raises(macronizer.ParsingError):
         wl.crunchwords(input_words)
+
+
+@pytest.mark.parametrize(
+    "gold, macronized, description",
+    [
+        ("ārma", "arm", "macronized is shorter"),
+        ("arm", "ārma", "macronized is longer"),
+    ],
+)
+def test_evaluate_raises_on_mismatched_lengths(
+    macronizer, gold, macronized, description
+):
+    """
+    Verifies that evaluate() raises an InvalidArgumentError immediately if the
+    input strings have different lengths.
+    """
+    # Arrange done by parametrize
+
+    # Act & Assert
+    with pytest.raises(macronizer.InvalidArgumentError) as exc_info:
+        macronizer.evaluate(gold, macronized)
+
+    # Check that the error message clearly indicates a length mismatch.
+    assert (
+        "length" in str(exc_info.value).lower()
+    ), f"Test failed for case: {description}"
