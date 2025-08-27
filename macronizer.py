@@ -73,7 +73,7 @@ def toascii(txt):
         ("ï", "i"),
         ("ö", "o"),
         ("ü", "u"),
-        ("ÿ", "u"),
+        ("ÿ", "y"),
     ]:
         txt = txt.replace(source, replacement)
     return txt

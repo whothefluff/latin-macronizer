@@ -751,7 +751,7 @@ def test_tokenization_scanverses_handles_elision_correctly(macronizer):
 
     tok2 = macronizer.Token("est")
     tok2.isword = True
-    tok2.accented = ["est"]    # Vowel is short, but syllable is long by position
+    tok2.accented = ["est"]  # Vowel is short, but syllable is long by position
 
     tokenization.tokens = [tok1, macronizer.Token(" "), tok2]
 
@@ -769,3 +769,8 @@ def test_tokenization_scanverses_handles_elision_correctly(macronizer):
     # Assert
     # The winning scansion path must be the elided one, resulting in "LL".
     assert tokenization.scannedfeet == ["LL"]
+
+
+def test_toascii_handles_y_diaeresis_correctly(macronizer):
+
+    assert macronizer.toascii("test_ÿ_test") == "test_y_test"
