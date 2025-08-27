@@ -10,6 +10,13 @@ import pytest
 
 @pytest.fixture
 def stub_modules():
+
+    def dummy_morpheus_parser(wordform, _nl):
+        """Return a non-empty list that mimics a successful parse.
+        (The contents don't matter, only that it's not empty)
+        """
+        return [[f"{wordform}-lemma", f"{wordform}-accented"]]
+
     # Minimal stubs for dependencies so we can import macronizer
     postags = types.ModuleType("postags")
     postags.LEMMA = 0
@@ -18,7 +25,7 @@ def stub_modules():
     postags.unicodeaccents = lambda s: s
     postags.tag_distance = lambda a, b: 0
     postags.parse_to_ldt = lambda p: "TAG"
-    postags.morpheus_to_parses = lambda wordform, nl: []
+    postags.morpheus_to_parses = dummy_morpheus_parser
     sys.modules["postags"] = postags
 
     lemmas = types.ModuleType("lemmas")
@@ -774,3 +781,86 @@ def test_tokenization_scanverses_handles_elision_correctly(macronizer):
 def test_toascii_handles_y_diaeresis_correctly(macronizer):
 
     assert macronizer.toascii("test_ÿ_test") == "test_y_test"
+
+
+def test_crunchwords_parsing(macronizer, monkeypatch):
+    """
+    Verifies the Morpheus output parser
+    """
+    # Arrange
+    wl = macronizer.Wordlist()
+    wl.reinitializedatabase()
+
+    morpheus_output = (
+        "arma\n"
+        "<NL>N arma  neut nom/voc/acc pl</NL>\n"
+        "cano\n"
+        "<NL>V ca^no_,cano  pres ind act 1st sg</NL>\n"
+    )
+
+    # Mock the external Morpheus call to return our controlled output.
+    # We also mock the executable check to prevent a FileNotFoundError.
+    monkeypatch.setattr(os.path, "isfile", lambda _: True)
+    monkeypatch.setattr(os, "access", lambda _p, _m: True)
+
+    def fake_run(*_args, stdout, **_kwargs):
+        stdout.write(morpheus_output.encode("utf-8"))
+        stdout.flush()
+
+    monkeypatch.setattr(macronizer, "run_external", fake_run)
+
+    input_words = {"arma", "virumque", "cano"}
+
+    # Act
+    wl.crunchwords(input_words)
+
+    # Assert
+    # Query the database to verify the final state of each word.
+    wl.dbcursor.execute(
+        "SELECT wordform, accented FROM morpheus WHERE wordform IN (?, ?, ?)",
+        ("arma", "cano", "hehehe"),
+    )
+    results = dict(wl.dbcursor.fetchall())
+
+    assert results.get("arma") is not None
+    assert results.get("virumque") is None
+    assert results.get("cano") is not None
+
+
+def test_crunchwords_parsing_raises_on_dangling_word(macronizer, monkeypatch):
+    """
+    Verifies that the Morpheus output parser raises exception on a truncated
+    output file where a final word line is not followed by its parse line.
+
+    This ensures no data is silently lost with anomalous Morpheus output.
+    """
+    # Arrange
+    wl = macronizer.Wordlist()
+    wl.reinitializedatabase()
+
+    # This Morpheus output is intentionally malformed.
+    morpheus_output = (
+        "arma\n"
+        "<NL>N arma  neut nom/voc/acc pl</NL>\n"
+        "cano\n"
+        "<NL>V ca^no_,cano  pres ind act 1st sg</NL>\n"
+        "hehehe"  # Dangling line
+    )
+
+    # Mock the external Morpheus call to return our controlled output.
+    # We also mock the executable check to prevent a FileNotFoundError.
+    monkeypatch.setattr(os.path, "isfile", lambda _: True)
+    monkeypatch.setattr(os, "access", lambda _p, _m: True)
+
+    def fake_run(*_args, stdout, **_kwargs):
+        stdout.write(morpheus_output.encode("utf-8"))
+        stdout.flush()
+
+    monkeypatch.setattr(macronizer, "run_external", fake_run)
+
+    # The input set must contain all words we expect to process.
+    input_words = {"arma", "virumque", "cano", "hehehe"}
+
+    # Act & Assert
+    with pytest.raises(macronizer.ParsingError):
+        wl.crunchwords(input_words)

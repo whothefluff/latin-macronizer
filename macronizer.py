@@ -56,12 +56,6 @@ class InvalidArgumentError(MacronizerError):
     """Raised when a function receives an argument with an invalid value."""
 
 
-def pairwise(iterable):
-    """s -> (s0,s1), (s2,s3), (s4, s5), ..."""
-    a = iter(iterable)
-    return zip(a, a)
-
-
 def toascii(txt):
     for source, replacement in [
         ("æ", "ae"),
@@ -236,10 +230,17 @@ class Wordlist:
                 morpheus = crunchedfile.read()
             crunchedwordforms = {}
             knownwords = set()
-            for wordform, nls in pairwise(morpheus.split("\n")):
-                wordform = wordform.strip().lower()
-                nls = nls.strip()
-                crunchedwordforms[wordform] = crunchedwordforms.get(wordform, "") + nls
+            lines = morpheus.splitlines()
+            it = iter(lines)
+            try:
+                for raw in it:
+                    wordform = raw.strip()
+                    nls = next(it).strip()
+                    crunchedwordforms[wordform] = (
+                        crunchedwordforms.get(wordform, "") + nls
+                    )
+            except StopIteration as e:
+                raise ParsingError("Morpheus output parsing failed.") from e
             for wordform, nls in crunchedwordforms.items():
                 parses = []
                 for nl in nls.split("<NL>"):
