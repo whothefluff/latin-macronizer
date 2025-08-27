@@ -1407,7 +1407,7 @@ def evaluate(goldstandard, macronizedtext):
         if toascii(touiorthography(a)) == toascii(touiorthography(b)):
             outtext.append(escape(b))
         else:
-            outtext.append(f'<span class="wrong">{b}</span>')
+            outtext.append(f'<span class="wrong">{escape(b)}</span>')
     # If there are no vowels, and the texts matched, accuracy is arguably 100%
     return lengthcorrect / float(vowelcount) if vowelcount else 1.0, "".join(outtext)
 
