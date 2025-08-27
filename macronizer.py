@@ -234,7 +234,7 @@ class Wordlist:
             it = iter(lines)
             try:
                 for raw in it:
-                    wordform = raw.strip()
+                    wordform = raw.strip().lower()
                     nls = next(it).strip()
                     crunchedwordforms[wordform] = (
                         crunchedwordforms.get(wordform, "") + nls
