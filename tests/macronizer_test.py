@@ -177,7 +177,7 @@ def test_crunchwords_inserts_unknown_when_no_output_and_cleans_tempfiles(
         ("sineparse",),
     )
     rows = wl.dbcursor.fetchall()
-    assert rows and all(r[1:] == (None, None, None) for r in rows)
+    assert rows and all(r[1:] == ("", "", "") for r in rows)
 
     # Temp files removed in finally
     for name in created:

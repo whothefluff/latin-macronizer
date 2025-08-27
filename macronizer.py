@@ -108,20 +108,16 @@ class Wordlist:
         self.dbcursor.execute("DROP TABLE IF EXISTS morpheus")
         self.dbcursor.execute(
             """
-            CREATE TABLE morpheus(
-                id INTEGER PRIMARY KEY, 
-                wordform TEXT NOT NULL, 
-                morphtag TEXT, 
-                lemma TEXT, 
-                accented TEXT, 
-                UNIQUE(wordform, morphtag, lemma, accented)
-            )
+CREATE TABLE morpheus(
+    wordform TEXT NOT NULL,
+    morphtag TEXT,
+    lemma TEXT,
+    accented TEXT,
+    PRIMARY KEY( wordform, morphtag, lemma, accented )
+) STRICT, WITHOUT ROWID;
         """
         )
         self.loadwordsfromfile(MACRONS_FILE, storeindb=True)
-        self.dbcursor.execute(
-            "CREATE INDEX morpheus_wordform_index ON morpheus (wordform)"
-        )
         self.dbconn.commit()
 
     # enddef
@@ -277,7 +273,8 @@ class Wordlist:
             # The remaining were unknown to Morpheus:
             for wordform in words - knownwords:
                 self.dbcursor.execute(
-                    "INSERT OR IGNORE INTO morpheus (wordform) VALUES (?)", (wordform,)
+                    "INSERT OR IGNORE INTO morpheus (wordform, morphtag, lemma, accented) VALUES (?, '', '', '')",
+                    (wordform,),
                 )
 
             self.dbconn.commit()
