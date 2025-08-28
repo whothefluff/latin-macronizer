@@ -16,22 +16,24 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import configparser
 import os
 import re
 import sqlite3
+import subprocess
 from collections import defaultdict
 from html import escape
-from tempfile import mkstemp
+from tempfile import NamedTemporaryFile
 
 import postags
 from lemmas import lemma_frequency, word_lemma_freq, wordform_to_corpus_lemmas
 from macronized_endings import tag_to_endings
 
 USE_DB = True
-DB_NAME = "macronizer.db"
-RFTAGGER_DIR = "/usr/local/bin"
-MORPHEUS_DIR = os.path.join(os.path.dirname(__file__), "morpheus")
-MACRONS_FILE = os.path.join(os.path.dirname(__file__), "macrons.txt")
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_NAME = os.path.join(SCRIPT_DIR, "macronizer.db")
+MORPHEUS_DIR = os.path.join(SCRIPT_DIR, "morpheus")
+MACRONS_FILE = os.path.join(SCRIPT_DIR, "macrons.txt")
 
 
 class MacronizerError(Exception):
@@ -54,12 +56,6 @@ class InvalidArgumentError(MacronizerError):
     """Raised when a function receives an argument with an invalid value."""
 
 
-def pairwise(iterable):
-    """s -> (s0,s1), (s2,s3), (s4, s5), ..."""
-    a = iter(iterable)
-    return zip(a, a)
-
-
 def toascii(txt):
     for source, replacement in [
         ("æ", "ae"),
@@ -71,7 +67,7 @@ def toascii(txt):
         ("ï", "i"),
         ("ö", "o"),
         ("ü", "u"),
-        ("ÿ", "u"),
+        ("ÿ", "y"),
     ]:
         txt = txt.replace(source, replacement)
     return txt
@@ -118,6 +114,7 @@ class Wordlist:
                 morphtag TEXT, 
                 lemma TEXT, 
                 accented TEXT, 
+                was_crunched INTEGER DEFAULT FALSE,
                 UNIQUE(wordform, morphtag, lemma, accented)
             )
         """
@@ -169,9 +166,9 @@ class Wordlist:
                     "SELECT wordform, morphtag, lemma, accented FROM morpheus WHERE wordform = ?",
                     (word,),
                 )
-            except Exception as exc:
+            except sqlite3.Error as exc:
                 raise DatabaseError(
-                    "Database table is missing. Please reset the database using --initialize."
+                    f"Query failed '{exc}'. If the database is missing, reset it using --initialize."
                 ) from exc
             rows = self.dbcursor.fetchall()
             if len(rows) == 0:
@@ -195,74 +192,104 @@ class Wordlist:
     # enddef
 
     def crunchwords(self, words):
-        morphinpfd, morphinpfname = mkstemp()
-        os.close(morphinpfd)
-        crunchedfd, crunchedfname = mkstemp()
-        os.close(crunchedfd)
-        with open(morphinpfname, "w", encoding="utf-8") as morphinpfile:
-            for word in words:
-                morphinpfile.write(word.strip().lower() + "\n")
-                morphinpfile.write(word.strip().capitalize() + "\n")
-        morpheus_command = f"MORPHLIB={MORPHEUS_DIR}/stemlib {MORPHEUS_DIR}/bin/cruncher -L < {morphinpfname} > {crunchedfname} 2> /dev/null"
-        exitcode = os.system(morpheus_command)
-        if exitcode != 0:
-            raise ExternalDependencyError(
-                f"Failed to execute Morpheus command: {morpheus_command}"
-            )
-        os.remove(morphinpfname)
-        with open(crunchedfname, "r", encoding="utf-8") as crunchedfile:
-            morpheus = crunchedfile.read()
-        os.remove(crunchedfname)
-        crunchedwordforms = {}
-        knownwords = set()
-        for wordform, nls in pairwise(morpheus.split("\n")):
-            wordform = wordform.strip().lower()
-            nls = nls.strip()
-            crunchedwordforms[wordform] = crunchedwordforms.get(wordform, "") + nls
-        for wordform, nls in crunchedwordforms.items():
-            parses = []
-            for nl in nls.split("<NL>"):
-                nl = nl.replace("</NL>", "")
-                nlparts = nl.split()
-                if len(nlparts) > 0:
-                    parses += postags.morpheus_to_parses(wordform, nl)
-            lemmatagtoaccenteds = defaultdict(list)
-            for parse in parses:
-                lemma = clean_lemma(parse[postags.LEMMA])
-                parse[postags.LEMMA] = lemma
-                accented = parse[postags.ACCENTEDFORM]
-                # Work around shortcoming in Morpheus, adding _ in tradu_co_, etc.:
-                if parse[postags.LEMMA].startswith("trans") and accented[3] != "_":
-                    accented = accented[:3] + "_" + accented[3:]
-                parse[postags.ACCENTEDFORM] = accented
-                tag = postags.parse_to_ldt(parse)
-                lemmatagtoaccenteds[(lemma, tag)].append(accented)
-            if len(lemmatagtoaccenteds) == 0:
-                continue
-            knownwords.add(wordform)
-            for (lemma, tag), accenteds in lemmatagtoaccenteds.items():
-                # Sometimes there are multiple accented forms; prefer 'volvit' to 'voluit', 'Ju_lius' to 'Iu_lius' etc.:
-                bestaccented = sorted(
-                    accenteds, key=lambda x: x.count("v") + x.count("j") + x.count("J")
-                )[-1]
-                lemmatagtoaccenteds[(lemma, tag)] = bestaccented
-            for (lemma, tag), accented in lemmatagtoaccenteds.items():
-                self.dbcursor.execute(
-                    "INSERT OR IGNORE INTO morpheus (wordform, morphtag, lemma, accented) VALUES (?, ?, ?, ?)",
-                    (wordform, tag, lemma, accented),
+        morphinp = NamedTemporaryFile(
+            "w", encoding="utf-8", delete=False, suffix=".txt"
+        )
+        crunched = NamedTemporaryFile("wb", delete=False, suffix=".txt")
+        morphinpfname = morphinp.name
+        crunchedfname = crunched.name
+        morphinp.close()
+        crunched.close()
+        try:
+            # Write to the input file for Morpheus cruncher
+            with open(morphinpfname, "w", encoding="utf-8") as morphinpfile:
+                for w in words:
+                    word = w.strip()
+                    morphinpfile.write(word.lower() + "\n")
+                    morphinpfile.write(word.capitalize() + "\n")
+            # Resolve Morpheus cruncher path
+            cruncher = os.path.join(MORPHEUS_DIR, "bin", "cruncher")
+            if not (os.path.isfile(cruncher) and os.access(cruncher, os.X_OK)):
+                raise ExternalDependencyError(
+                    f"Morpheus cruncher not found or not executable: {cruncher}"
                 )
-        # The remaining were unknown to Morpheus:
-        for wordform in words - knownwords:
-            self.dbcursor.execute(
-                "INSERT OR IGNORE INTO morpheus (wordform) VALUES (?)", (wordform,)
-            )
+            cmd = [cruncher, "-L"]
+            env = os.environ.copy()
+            env["MORPHLIB"] = os.path.join(MORPHEUS_DIR, "stemlib")
+            # Run cruncher: stdin <- morphinpfname, stdout -> crunchedfname
+            with open(morphinpfname, "rb") as fin, open(crunchedfname, "wb") as fout:
+                run_external(
+                    cmd,
+                    stdin=fin,
+                    stdout=fout,
+                    env=env,
+                    timeout=120,
+                    tool_name="morpheus cruncher",
+                )
+            # Read output
+            with open(crunchedfname, "r", encoding="utf-8") as crunchedfile:
+                morpheus = crunchedfile.read()
+            crunchedwordforms = {}
+            knownwords = set()
+            lines = morpheus.splitlines()
+            it = iter(lines)
+            try:
+                for raw in it:
+                    wordform = raw.strip().lower()
+                    nls = next(it).strip()
+                    crunchedwordforms[wordform] = (
+                        crunchedwordforms.get(wordform, "") + nls
+                    )
+            except StopIteration as e:
+                raise ParsingError("Morpheus output parsing failed.") from e
+            for wordform, nls in crunchedwordforms.items():
+                parses = []
+                for nl in nls.split("<NL>"):
+                    nl = nl.replace("</NL>", "")
+                    nlparts = nl.split()
+                    if len(nlparts) > 0:
+                        parses += postags.morpheus_to_parses(wordform, nl)
+                lemmatagtoaccenteds = defaultdict(list)
+                for parse in parses:
+                    lemma = clean_lemma(parse[postags.LEMMA])
+                    parse[postags.LEMMA] = lemma
+                    accented = parse[postags.ACCENTEDFORM]
+                    # Work around shortcoming in Morpheus, adding _ in tradu_co_, etc.:
+                    if parse[postags.LEMMA].startswith("trans") and accented[3] != "_":
+                        accented = accented[:3] + "_" + accented[3:]
+                    parse[postags.ACCENTEDFORM] = accented
+                    tag = postags.parse_to_ldt(parse)
+                    lemmatagtoaccenteds[(lemma, tag)].append(accented)
+                if len(lemmatagtoaccenteds) == 0:
+                    continue
+                knownwords.add(wordform)
+                for (lemma, tag), accenteds in lemmatagtoaccenteds.items():
+                    # Sometimes there are multiple accented forms; prefer 'volvit' to 'voluit', 'Ju_lius' to 'Iu_lius' etc.:
+                    bestaccented = sorted(
+                        accenteds,
+                        key=lambda x: x.count("v") + x.count("j") + x.count("J"),
+                    )[-1]
+                    lemmatagtoaccenteds[(lemma, tag)] = bestaccented
+                for (lemma, tag), accented in lemmatagtoaccenteds.items():
+                    self.dbcursor.execute(
+                        "INSERT OR IGNORE INTO morpheus (wordform, morphtag, lemma, accented, was_crunched) VALUES (?, ?, ?, ?, ?)",
+                        (wordform, tag, lemma, accented, True),
+                    )
+            # The remaining were unknown to Morpheus:
+            for wordform in words - knownwords:
+                self.dbcursor.execute(
+                    "INSERT OR IGNORE INTO morpheus (wordform, was_crunched) VALUES (?, ?)",
+                    (wordform, True),
+                )
 
-        self.dbconn.commit()
-
-    # enddef
-
-
-# endclass
+            self.dbconn.commit()
+        finally:
+            # Clean up temp files (even on failure)
+            for fn in (morphinpfname, crunchedfname):
+                try:
+                    os.remove(fn)
+                except OSError:
+                    pass
 
 
 prefixeswithshortj = (
@@ -313,8 +340,10 @@ class Token:
 
     def show(self):
         print(
-            "\t".join([self.text, self.tag, self.lemma, self.accented[0]])
-        ).expandtabs(16)
+            "\t".join(
+                [self.text, self.tag, self.lemma, self.accented[0]],
+            ).expandtabs(16)
+        )
 
     # enddef
 
@@ -325,9 +354,13 @@ class Token:
             return
         accented = self.accented[0]
         accented = accented.replace("_^", "").replace("^", "")
+        while "__" in accented:
+            accented = accented.replace("__", "_")
+        # Mark long before consonantal j if requested (excluding known short-j prefixes)
         if domacronize and alsomaius and "j" in accented:
             if not accented.startswith(prefixeswithshortj):
                 accented = re.sub("([aeiouy])(j[aeiouy])", r"\1_\2", accented)
+        # If we're not adding macrons (no underscores) and not doing u→v or i→j, just return original
         if (
             (not domacronize or "_" not in accented)
             and not performutov
@@ -335,25 +368,28 @@ class Token:
         ):
             self.macronized = plain
             return
+        # Enclitic tokens are not macronized (except "ue" when converting u→v)
         if self.isenclitic and not (plain.lower() == "ue" and performutov):
             self.macronized = plain
             return
+        # If the only difference is underscores, we can return quickly
         if plain == accented.replace("_", ""):
-            if domacronize:
-                self.macronized = accented
-            else:
-                self.macronized = plain
+            self.macronized = accented if domacronize else plain
             return
-        # endif
+        # Skeleton check: compare after removing underscores and normalizing to UI orthography + ASCII
+        s_plain = touiorthography(toascii(plain)).lower()
+        s_acc = touiorthography(toascii(accented.replace("_", ""))).lower()
+        if s_plain != s_acc:
+            # Not the same word skeleton; avoid forcing a dubious alignment
+            self.macronized = plain
+            return
 
         def inscost(a):
-            if a == "_":
-                return 0
-            return 2
+            return 0 if a == "_" else 2
 
         def subcost(p, a):
             if a == "_":
-                return 100
+                return 100  # don't "substitute" underscores
             if (a in "IJij" and p in "IJij") or (a in "UVuv" and p in "UVuv"):
                 return 1
             return 2
@@ -361,9 +397,10 @@ class Token:
         def delcost(_):
             return 2
 
+        # Build DP table
         n = len(plain) + 1
         m = len(accented) + 1
-        distance = [[0 for i in range(m)] for j in range(n)]
+        distance = [[0 for _ in range(m)] for _ in range(n)]
         for i in range(1, n):
             distance[i][0] = distance[i - 1][0] + delcost(plain[i - 1])
         for j in range(1, m):
@@ -374,19 +411,23 @@ class Token:
                     distance[i][j] = distance[i - 1][j - 1]
                 else:
                     rghtcost = distance[i - 1][j] + delcost(plain[i - 1])
+                    downcost = distance[i][j - 1] + inscost(accented[j - 1])
                     diagcost = distance[i - 1][j - 1] + subcost(
                         plain[i - 1], accented[j - 1]
                     )
-                    downcost = distance[i][j - 1] + inscost(accented[j - 1])
                     distance[i][j] = min(rghtcost, diagcost, downcost)
+        # Backtrace with explicit flush of remainders
+        i = n - 1
+        j = m - 1
         result = ""
-        while i != 0 and j != 0:
-            upcost = distance[i][j - 1] if j > 0 else 1000
-            diagcost = distance[i - 1][j - 1] if j > 0 and i > 0 else 1000
-            leftcost = distance[i - 1][j] if i > 0 else 1000
-            if (
-                diagcost <= upcost and diagcost < leftcost
-            ):  # To-do: review the comparisons...
+        while i > 0 and j > 0:
+            # Prefer diagonal when ties occur to keep alignment stable
+            same = toascii(plain[i - 1].lower()) == toascii(accented[j - 1].lower())
+            diag_needed = distance[i][j] == distance[i - 1][j - 1] + (
+                0 if same else subcost(plain[i - 1], accented[j - 1])
+            )
+            up_needed = distance[i][j] == distance[i][j - 1] + inscost(accented[j - 1])
+            if diag_needed:
                 i -= 1
                 j -= 1
                 if performutov and accented[j].lower() == "v" and plain[i] == "u":
@@ -399,21 +440,25 @@ class Token:
                     result = "J" + result
                 else:
                     result = plain[i] + result
-            elif upcost <= diagcost and upcost <= leftcost:
+            elif up_needed:
                 j -= 1
                 if domacronize and accented[j] == "_":
                     result = "_" + result
-            else:
+            else:  # Left move
                 i -= 1
                 result = plain[i] + result
+        # Flush any remaining insertions (underscores) from accented
+        while j > 0:
+            j -= 1
+            if domacronize and accented[j] == "_":
+                result = "_" + result
+        # Flush any remaining deletions (characters) from plain
+        while i > 0:
+            i -= 1
+            result = plain[i] + result
         # Some strange morpheus output (e.g. de_e_recti_) may give an additional _ in the result:
         result = result.replace("__", "_")
         self.macronized = result
-
-    # enddef
-
-
-# endclass
 
 
 class Tokenization:
@@ -602,13 +647,14 @@ class Tokenization:
 
     # enddef
 
-    def addtags(self):
-        totaggerfd, totaggerfname = mkstemp()
-        os.close(totaggerfd)
-        fromtaggerfd, fromtaggerfname = mkstemp()
-        os.close(fromtaggerfd)
-        savedencliticbearer = None
-        with open(totaggerfname, "w", encoding="utf-8") as totaggerfile:
+    def addtags(self, rftagger_dir: str) -> None:
+        with NamedTemporaryFile(
+            "w+", encoding="utf-8", delete=True
+        ) as totaggerfile, NamedTemporaryFile(
+            "w+", encoding="utf-8", delete=True
+        ) as fromtaggerfile:
+            # Write the input data for RFTagger
+            savedencliticbearer = None
             for token in self.tokens:
                 if not token.isspace:
                     tokentext = token.text
@@ -624,14 +670,33 @@ class Tokenization:
                         savedencliticbearer = None
                 if token.endssentence:
                     totaggerfile.write("\n")
-        rftagger_model = os.path.join(os.path.dirname(__file__), "rftagger-ldt.model")
-        rft_command = f"{RFTAGGER_DIR}/rft-annotate -s -q {rftagger_model} {totaggerfname} {fromtaggerfname}"
-        exitcode = os.system(rft_command)
-        if exitcode != 0:
-            raise ExternalDependencyError(
-                f"Failed to execute RFTagger command: {rft_command}"
+
+            # Ensure all data is written to disk before the external program tries to read it.
+            totaggerfile.flush()
+
+            rftagger_model = os.path.join(
+                os.path.dirname(__file__), "rftagger-ldt.model"
             )
-        with open(fromtaggerfname, "r", encoding="utf-8") as fromtaggerfile:
+            # Resolve rft-annotate path
+            rft_annotate = os.path.join(rftagger_dir, "rft-annotate")
+            if not (os.path.isfile(rft_annotate) and os.access(rft_annotate, os.X_OK)):
+                raise ExternalDependencyError(
+                    f"RFTagger 'rft-annotate' not found or not executable: {rft_annotate}"
+                )
+
+            cmd = [
+                rft_annotate,
+                "-s",
+                "-q",
+                rftagger_model,
+                totaggerfile.name,
+                fromtaggerfile.name,
+            ]
+            # Run rft-annotate
+            run_external(cmd, tool_name="RFTagger")
+            # After the external tool writes to the file, we need to go back to the start of it to read.
+            fromtaggerfile.seek(0)
+
             (taggedenclititoken, enclitictag) = (None, None)
             line = None
             for token in self.tokens:
@@ -639,17 +704,17 @@ class Tokenization:
                     try:
                         if token.hasenclitic:
                             line = fromtaggerfile.readline().strip()
-                            assert line
-                            assert line.count("\t") == 1
+                            assert line and line.count("\t") == 1
                             (taggedenclititoken, enclitictag) = line.split("\t")
                         if token.isenclitic:
-                            assert taggedenclititoken is not None
-                            assert enclitictag is not None
+                            assert (
+                                taggedenclititoken is not None
+                                and enclitictag is not None
+                            )
                             (taggedtoken, tag) = (taggedenclititoken, enclitictag)
                         else:
                             line = fromtaggerfile.readline().strip()
-                            assert line
-                            assert line.count("\t") == 1
+                            assert line and line.count("\t") == 1
                             (taggedtoken, tag) = line.split("\t")
                         if token.text == token.text.upper():
                             assert taggedtoken == toascii(token.text.lower())
@@ -657,17 +722,12 @@ class Tokenization:
                             assert taggedtoken == toascii(token.text)
                     except AssertionError as exc:
                         raise ParsingError(
-                            f"Error: Could not handle tagging data in file {fromtaggerfname}:\n"
+                            f"Error: Could not handle tagging data from RFTagger:\n"
                             f"'{'Premature End Of File.' if not line else line}'"
                         ) from exc
-                    # endtry
                     token.tag = tag.replace(".", "")
                 if token.endssentence:
                     line = fromtaggerfile.readline()
-        os.remove(totaggerfname)
-        os.remove(fromtaggerfname)
-
-    # enddef
 
     def addlemmas(self, wordlist):
 
@@ -847,100 +907,113 @@ class Tokenization:
         # enddef
 
         def possiblescans(accentedcandidates, followingsegment):
-            """A form with marked vowel lengths can be scanned differently, considering
+            """
+            A form with marked vowel lengths can be scanned differently, considering
             muta cum liquida, diphthong vs. diaeresis, elision, etc.
+
             input: followingsegment is one of ["V", "C", "CC", "#"]
-            returns: [(penalty, scansion, accented), ...]"""
-            isfirstaccented = True
+            returns: [(penalty, scansion, accented), ...]
+            """
             scans = []
-            for accented in separate_ambiguous_vowels(accentedcandidates):
-                segments = segmentaccented(accented)
-                segments.append(followingsegment)
-                basepenalty = 0 if isfirstaccented else self.REPRIORITIZE_PENALTY
-                temps = [(basepenalty, "")]
-                for i, thisseg in enumerate(segments):
-                    prevseg = "#" if i == 0 else segments[i - 1]
-                    nextseg = "#" if i == len(segments) - 1 else segments[i + 1]
-                    if i == 0 and not thisseg[0] in "aeiouy":
-                        continue
-                    news = []
-                    for penaltysofar, scansofar in temps:
-                        if "_" in thisseg:
-                            news.append((penaltysofar, scansofar + "L"))
-                        elif thisseg in ["ae", "au", "ei", "oe", "eu"]:
-                            news.append((penaltysofar, scansofar + "L"))
-                            news.append(
-                                (
-                                    penaltysofar + self.DIAERESIS_PENALTY,
-                                    scansofar + "VV",
+            # Iterate over top-level candidates in the priority order given by getaccents
+            for cand_idx, base_accented in enumerate(accentedcandidates):
+                # Expand only this candidate’s ambiguous vowels (_^) into per-variant accenteds
+                variants = separate_ambiguous_vowels([base_accented])
+                # Apply reprioritization penalty per candidate, not per variant
+                basepenalty = 0 if cand_idx == 0 else self.REPRIORITIZE_PENALTY
+
+                for accented in variants:
+                    segments = segmentaccented(accented)
+                    segments.append(followingsegment)
+
+                    temps = [(basepenalty, "")]
+                    for i, thisseg in enumerate(segments):
+                        prevseg = "#" if i == 0 else segments[i - 1]
+                        nextseg = "#" if i == len(segments) - 1 else segments[i + 1]
+                        if i == 0 and not thisseg[0] in "aeiouy":
+                            # Skip leading consonant clusters at word start
+                            continue
+                        news = []
+                        for penaltysofar, scansofar in temps:
+                            if "_" in thisseg:
+                                news.append((penaltysofar, scansofar + "L"))
+                            elif thisseg in ["ae", "au", "ei", "oe", "eu"]:
+                                news.append((penaltysofar, scansofar + "L"))
+                                news.append(
+                                    (
+                                        penaltysofar + self.DIAERESIS_PENALTY,
+                                        scansofar + "VV",
+                                    )
                                 )
-                            )
-                        elif (
-                            (prevseg.endswith("s") or prevseg.endswith("ng"))
-                            and thisseg == "u"
-                            and nextseg[0] in "aeiouy"
-                        ):
-                            news.append((penaltysofar, scansofar + "C"))
-                            news.append(
-                                (
-                                    penaltysofar + self.NO_SYNEZIS_PENALTY,
-                                    scansofar + "V",
-                                )
-                            )
-                        elif thisseg[0] in "ui" and (
-                            nextseg[0] in "aeiouy" or prevseg[0] in "aeiouy"
-                        ):
-                            news.append((penaltysofar, scansofar + "V"))
-                            news.append(
-                                (penaltysofar + self.SYNEZIS_PENALTY, scansofar + "C")
-                            )
-                        elif thisseg[0] in "aeiouy":
-                            news.append((penaltysofar, scansofar + "V"))
-                        elif thisseg == "m" and nextseg in ["V", "C", "CC", "#"]:
-                            news.append((penaltysofar, scansofar + "M"))
-                        elif thisseg == "j" and prevseg != "#":
-                            if accented.startswith(prefixeswithshortj):
+                            elif (
+                                (prevseg.endswith("s") or prevseg.endswith("ng"))
+                                and thisseg == "u"
+                                and nextseg[0] in "aeiouy"
+                            ):
                                 news.append((penaltysofar, scansofar + "C"))
+                                news.append(
+                                    (
+                                        penaltysofar + self.NO_SYNEZIS_PENALTY,
+                                        scansofar + "V",
+                                    )
+                                )
+                            elif thisseg[0] in "ui" and (
+                                nextseg[0] in "aeiouy" or prevseg[0] in "aeiouy"
+                            ):
+                                news.append((penaltysofar, scansofar + "V"))
+                                news.append(
+                                    (
+                                        penaltysofar + self.SYNEZIS_PENALTY,
+                                        scansofar + "C",
+                                    )
+                                )
+                            elif thisseg[0] in "aeiouy":
+                                news.append((penaltysofar, scansofar + "V"))
+                            elif thisseg == "m" and nextseg in ["V", "C", "CC", "#"]:
+                                news.append((penaltysofar, scansofar + "M"))
+                            elif thisseg == "j" and prevseg != "#":
+                                if accented.startswith(prefixeswithshortj):
+                                    news.append((penaltysofar, scansofar + "C"))
+                                else:
+                                    news.append((penaltysofar, scansofar + "CC"))
+                            elif thisseg == "V":  # next word begins with vowel
+                                if scansofar.endswith("V") or scansofar.endswith("L"):
+                                    news.append((penaltysofar, scansofar[:-1]))
+                                    news.append(
+                                        (penaltysofar + self.HIATUS_PENALTY, scansofar)
+                                    )
+                                elif scansofar.endswith("M"):
+                                    news.append((penaltysofar, scansofar[:-2]))
+                                    news.append(
+                                        (penaltysofar + self.HIATUS_PENALTY, scansofar)
+                                    )
+                                else:
+                                    news.append((penaltysofar, scansofar))
+                            elif thisseg == "#":
+                                news.append((penaltysofar, scansofar))
+                            elif len(thisseg) == 1:
+                                news.append((penaltysofar, scansofar + "C"))
+                            elif (
+                                len(thisseg) == 2
+                                and thisseg[0] in "tpcdbgf"
+                                and thisseg[1] in "rl"
+                            ):
+                                news.append((penaltysofar, scansofar + "C"))
+                                news.append(
+                                    (
+                                        penaltysofar + self.MUTA_CUM_LIQUIDA_PENALTY,
+                                        scansofar + "CC",
+                                    )
+                                )
                             else:
                                 news.append((penaltysofar, scansofar + "CC"))
-                        elif thisseg == "V":  # next word begins with vowel
-                            if scansofar.endswith("V") or scansofar.endswith("L"):
-                                news.append((penaltysofar, scansofar[:-1]))
-                                news.append(
-                                    (penaltysofar + self.HIATUS_PENALTY, scansofar)
-                                )
-                            elif scansofar.endswith("M"):
-                                news.append((penaltysofar, scansofar[:-2]))
-                                news.append(
-                                    (penaltysofar + self.HIATUS_PENALTY, scansofar)
-                                )
-                            else:
-                                news.append((penaltysofar, scansofar))
-                        elif thisseg == "#":
-                            news.append((penaltysofar, scansofar))
-                        elif len(thisseg) == 1:
-                            news.append((penaltysofar, scansofar + "C"))
-                        elif (
-                            len(thisseg) == 2
-                            and thisseg[0] in "tpcdbgf"
-                            and thisseg[1] in "rl"
-                        ):
-                            news.append((penaltysofar, scansofar + "C"))
-                            news.append(
-                                (
-                                    penaltysofar + self.MUTA_CUM_LIQUIDA_PENALTY,
-                                    scansofar + "CC",
-                                )
-                            )
-                        else:
-                            news.append((penaltysofar, scansofar + "CC"))
-                    temps = news
-                for penalty, scansion in temps:
-                    scansion = re.sub("VMC*|VCCC*|LM?C*", "L", scansion)
-                    scansion = re.sub("VC?", "S", scansion)
-                    scansion = re.sub("^C*", "", scansion)
-                    scans.append((penalty, scansion, accented))
-                isfirstaccented = False
+                        temps = news
+                    for penalty, scansion in temps:
+                        scansion = re.sub("VMC*|VCCC*|LM?C*", "L", scansion)
+                        scansion = re.sub("VC?", "S", scansion)
+                        scansion = re.sub("^C*", "", scansion)
+                        scans.append((penalty, scansion, accented))
+            # De-duplicate by scansion, preferring lower penalty (then lexicographically)
             filteredscans = []
             foundscansions = set()
             for penalty, scansion, accented in sorted(scans):
@@ -948,8 +1021,6 @@ class Tokenization:
                     filteredscans.append((penalty, scansion, accented))
                     foundscansions.add(scansion)
             return filteredscans
-
-        # enddef
 
         def scanverse(verse, automaton):
             """Input: The "verse" is a complicated list of the format
@@ -964,7 +1035,7 @@ class Tokenization:
                 (tokenindex, wordscansions) = verse[wordindex]
                 besttail = []
                 besttailfeet = []
-                besttailpenalty = 100
+                besttailpenalty = float("inf")
                 for scanpenalty, scansion, accented in wordscansions:
                     nodeindex = oldnodeindex
                     feet = []
@@ -1017,7 +1088,7 @@ class Tokenization:
                         followingtext += " "
                     elif self.tokens[nextindex].isword:
                         followingtext += self.tokens[nextindex].accented[0]
-                        if "aeiouy" in followingtext:
+                        if any(ch in "aeiouy" for ch in followingtext):
                             break
                 followingtext = followingtext.lower().replace("h", "")
                 if followingtext == "":
@@ -1264,7 +1335,11 @@ class Macronizer:
         (13, "S"): (0, "u", 0),
     }
 
-    def __init__(self):
+    def __init__(self, config_path: str = os.path.join(SCRIPT_DIR, "config.ini")):
+        config = configparser.ConfigParser()
+        config.read(config_path)
+        self.rftagger_dir = config.get("paths", "rftagger_dir", fallback="")
+
         self.wordlist = Wordlist()
         self.tokenization = Tokenization("")
 
@@ -1275,7 +1350,7 @@ class Macronizer:
         self.wordlist.loadwords(self.tokenization.allwordforms())
         newwordforms = self.tokenization.splittokens(self.wordlist)
         self.wordlist.loadwords(newwordforms)
-        self.tokenization.addtags()
+        self.tokenization.addtags(self.rftagger_dir)
         self.tokenization.addlemmas(self.wordlist)
         self.tokenization.getaccents(self.wordlist)
 
@@ -1320,6 +1395,11 @@ class Macronizer:
 
 
 def evaluate(goldstandard, macronizedtext):
+    if len(goldstandard) != len(macronizedtext):
+        raise InvalidArgumentError(
+            f"Error: Text mismatch. Gold standard length ({len(goldstandard)}) "
+            f"does not match macronized text length ({len(macronizedtext)})."
+        )
     vowelcount = 0
     lengthcorrect = 0
     outtext = []
@@ -1335,11 +1415,42 @@ def evaluate(goldstandard, macronizedtext):
         if toascii(touiorthography(a)) == toascii(touiorthography(b)):
             outtext.append(escape(b))
         else:
-            outtext.append(f'<span class="wrong">{b}</span>')
-    return lengthcorrect / float(vowelcount), "".join(outtext)
+            outtext.append(f'<span class="wrong">{escape(b)}</span>')
+    # If there are no vowels, and the texts matched, accuracy is arguably 100%
+    return lengthcorrect / float(vowelcount) if vowelcount else 1.0, "".join(outtext)
 
 
-# enddef
+def run_external(
+    cmd, *, stdin=None, stdout=None, env=None, timeout=120, tool_name=None
+):
+    """
+    Run an external command safely, capturing stderr and converting common failures into ExternalDependencyError.
+    """
+    try:
+        completed = subprocess.run(
+            cmd,
+            stdin=stdin,
+            stdout=stdout,
+            stderr=subprocess.PIPE,  # capture for diagnostics
+            env=env,
+            check=True,
+            timeout=timeout,
+        )
+        return completed
+    except FileNotFoundError as exc:
+        name = tool_name or (cmd[0] if isinstance(cmd, (list, tuple)) else str(cmd))
+        raise ExternalDependencyError(
+            f"Required external tool not found: {name}"
+        ) from exc
+    except subprocess.TimeoutExpired as exc:
+        name = tool_name or (cmd[0] if isinstance(cmd, (list, tuple)) else str(cmd))
+        raise ExternalDependencyError(f"External tool timed out: {name}") from exc
+    except subprocess.CalledProcessError as exc:
+        name = tool_name or (cmd[0] if isinstance(cmd, (list, tuple)) else str(cmd))
+        stderr = exc.stderr.decode(errors="replace") if exc.stderr else ""
+        raise ExternalDependencyError(
+            f"External tool failed (exit {exc.returncode}): {name}\nStderr:\n{stderr}"
+        ) from exc
 
 
 if __name__ == "__main__":

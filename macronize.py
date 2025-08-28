@@ -26,8 +26,6 @@ from typing import List, Tuple
 
 from macronizer import Macronizer, evaluate
 
-MACRONIZER_LIB = "."
-
 SCANSIONS: List[Tuple[str, List[Macronizer.ScansionRules]]] = [
     ("prose (no scansion)", []),
     ("dactylic hexameters", [Macronizer.dactylichexameter]),
@@ -40,9 +38,6 @@ SCANSIONS: List[Tuple[str, List[Macronizer.ScansionRules]]] = [
 ]
 TRUNCATETHRESHOLD = 50000  # Set to -1 to disable
 DEBUGCOMMAND = "DEBUG\n"
-
-
-sys.path.append(MACRONIZER_LIB)
 
 
 def create_html_page(
@@ -334,6 +329,7 @@ def main_cgi() -> None:
         )
     )
 
+
 def main_cli() -> None:
     parser = argparse.ArgumentParser()
     infile_group = parser.add_mutually_exclusive_group()
@@ -371,11 +367,16 @@ def main_cli() -> None:
         action="store_true",
         help="test accuracy against input gold standard",
     )
+    parser.add_argument(
+        "-c", "--config",
+        default="config.ini",
+        help="Path to the configuration file"
+    )
     args = parser.parse_args()
 
     if args.initialize:
         try:
-            macronizer = Macronizer()
+            macronizer = Macronizer(args.config)
             macronizer.wordlist.reinitializedatabase()
         except Exception as inst:
             print(inst.args[0])
@@ -387,7 +388,7 @@ def main_cli() -> None:
             print(f"{i}: {description}")
         exit(0)
 
-    macronizer = Macronizer()
+    macronizer = Macronizer(args.config)
     if args.test:
         texttomacronize = "O orbis terrarum te saluto!\n"
     else:
