@@ -461,6 +461,24 @@ class TestTokenMacronize:
         # The 'alsomaius' logic should be skipped, and no macron should be added.
         assert token.macronized == "rejecit"
 
+    def test_sets_macronized_attribute_from_get_macronized(self, macronizer, mocker):
+        """
+        Verifies that Token.macronize() sets the `macronized` attribute
+        with the return value from its method `get_macronized`.
+        """
+        # Arrange
+        token = macronizer.Token("testword")
+        stubbed_return_value = "MACRONIZED_FORM"
+        mocker.patch.object(token, "get_macronized", return_value=stubbed_return_value)
+
+        # Act
+        token.macronize(
+            domacronize=True, alsomaius=False, performutov=False, performitoj=False
+        )
+
+        # Assert
+        assert token.macronized == stubbed_return_value
+
 
 class TestTokenizationScanverses:
     """

@@ -347,11 +347,12 @@ class Token:
 
     # enddef
 
-    def macronize(self, domacronize, alsomaius, performutov, performitoj):
+    def get_macronized(
+        self, domacronize: bool, alsomaius: bool, performutov: bool, performitoj: bool
+    ) -> str:
         plain = self.text
         if not self.isword:
-            self.macronized = plain
-            return
+            return plain
         accented = self.accented[0]
         accented = accented.replace("_^", "").replace("^", "")
         while "__" in accented:
@@ -366,23 +367,19 @@ class Token:
             and not performutov
             and not performitoj
         ):
-            self.macronized = plain
-            return
+            return plain
         # Enclitic tokens are not macronized (except "ue" when converting u→v)
         if self.isenclitic and not (plain.lower() == "ue" and performutov):
-            self.macronized = plain
-            return
+            return plain
         # If the only difference is underscores, we can return quickly
         if plain == accented.replace("_", ""):
-            self.macronized = accented if domacronize else plain
-            return
+            return accented if domacronize else plain
         # Skeleton check: compare after removing underscores and normalizing to UI orthography + ASCII
         s_plain = touiorthography(toascii(plain)).lower()
         s_acc = touiorthography(toascii(accented.replace("_", ""))).lower()
         if s_plain != s_acc:
             # Not the same word skeleton; avoid forcing a dubious alignment
-            self.macronized = plain
-            return
+            return plain
 
         def inscost(a):
             return 0 if a == "_" else 2
@@ -458,7 +455,12 @@ class Token:
             result = plain[i] + result
         # Some strange morpheus output (e.g. de_e_recti_) may give an additional _ in the result:
         result = result.replace("__", "_")
-        self.macronized = result
+        return result
+
+    def macronize(self, domacronize, alsomaius, performutov, performitoj) -> None:
+        self.macronized = self.get_macronized(
+            domacronize, alsomaius, performutov, performitoj
+        )
 
 
 class Tokenization:
