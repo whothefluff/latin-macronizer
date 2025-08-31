@@ -91,13 +91,13 @@ def clean_lemma(lemma):
 
 
 class Wordlist:
-    def __init__(self):
-        self.unknownwords = set()  # Unknown to Morpheus
-        self.formtolemmas = defaultdict(list)
-        self.formtoaccenteds = defaultdict(list)
-        self.formtotaglemmaaccents = defaultdict(list)
+    def __init__(self, db_conn: sqlite3.Connection):
+        self.unknownwords: set[str] = set()  # Unknown to Morpheus
+        self.formtolemmas: defaultdict[str, list] = defaultdict(list)
+        self.formtoaccenteds: defaultdict[str, list] = defaultdict(list)
+        self.formtotaglemmaaccents: defaultdict[str, list] = defaultdict(list)
         if USE_DB:
-            self.dbconn = sqlite3.connect(DB_NAME)
+            self.dbconn = db_conn
             self.dbcursor = self.dbconn.cursor()
         else:
             self.loadwordsfromfile(MACRONS_FILE)
@@ -1337,12 +1337,16 @@ class Macronizer:
         (13, "S"): (0, "u", 0),
     }
 
-    def __init__(self, config_path: str = os.path.join(SCRIPT_DIR, "config.ini")):
+    def __init__(
+        self,
+        db_conn: sqlite3.Connection,
+        config_path: str = os.path.join(SCRIPT_DIR, "config.ini"),
+    ):
         config = configparser.ConfigParser()
         config.read(config_path)
         self.rftagger_dir = config.get("paths", "rftagger_dir", fallback="")
 
-        self.wordlist = Wordlist()
+        self.wordlist = Wordlist(db_conn)
         self.tokenization = Tokenization("")
 
     # enddef

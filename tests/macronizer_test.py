@@ -1,4 +1,3 @@
-import importlib
 import os
 import sqlite3
 import subprocess
@@ -50,18 +49,15 @@ def macronizer_fixture(
     monkeypatch,
     tmp_path,
 ):
-    # pytest runs the `stub_modules` fixture first, which mocks dependencies.
-    # This allows the subsequent import of `macronizer` inside this fixture to succeed.
+
+    import importlib  # pylint: disable=import-outside-toplevel
+
     import macronizer as mod  # pylint: disable=import-outside-toplevel
 
     importlib.reload(mod)
 
-    db_path = tmp_path / "test_macronizer.db"
     macrons_txt = tmp_path / "macrons.txt"
     macrons_txt.write_text("", encoding="utf-8")
-
-    monkeypatch.setattr(mod, "USE_DB", True)
-    monkeypatch.setattr(mod, "DB_NAME", str(db_path))
     monkeypatch.setattr(mod, "MACRONS_FILE", str(macrons_txt))
 
     return mod
@@ -79,6 +75,15 @@ def create_config_ini_fixture(tmp_path):
         return str(config_file)
 
     return _create
+
+
+@pytest.fixture(name="db_conn")
+def db_conn_fixture():
+    """Provides a fresh, in-memory sqlite3 database connection for each test."""
+
+    conn = sqlite3.connect(":memory:")
+    yield conn
+    conn.close()
 
 
 def test_run_external_maps_filenotfound(macronizer, monkeypatch):
@@ -127,8 +132,10 @@ def test_run_external_success(macronizer, monkeypatch):
     assert macronizer.run_external(["true"]) is not None
 
 
-def test_crunchwords_raises_when_cruncher_missing(macronizer, tmp_path, monkeypatch):
-    wl = macronizer.Wordlist()
+def test_crunchwords_raises_when_cruncher_missing(
+    macronizer, tmp_path, monkeypatch, db_conn
+):
+    wl = macronizer.Wordlist(db_conn)
     wl.reinitializedatabase()
 
     # Point MORPHEUS_DIR to a temp dir WITHOUT cruncher
@@ -140,9 +147,9 @@ def test_crunchwords_raises_when_cruncher_missing(macronizer, tmp_path, monkeypa
 
 
 def test_crunchwords_inserts_unknown_when_no_output_and_cleans_tempfiles(
-    macronizer, tmp_path, monkeypatch
+    macronizer, tmp_path, monkeypatch, db_conn
 ):
-    wl = macronizer.Wordlist()
+    wl = macronizer.Wordlist(db_conn)
     wl.reinitializedatabase()
 
     # Provide executable cruncher so path check passes
@@ -184,8 +191,8 @@ def test_crunchwords_inserts_unknown_when_no_output_and_cleans_tempfiles(
         assert not os.path.exists(name)
 
 
-def test_crunchwords_sets_morphlib_env(macronizer, tmp_path, monkeypatch):
-    wl = macronizer.Wordlist()
+def test_crunchwords_sets_morphlib_env(macronizer, tmp_path, monkeypatch, db_conn):
+    wl = macronizer.Wordlist(db_conn)
     wl.reinitializedatabase()
 
     # Provide executable cruncher
@@ -572,7 +579,9 @@ class TestTokenizationScanverses:
         assert selected == "ba"
 
 
-def test_macronizer_init_stores_rftagger_dir_from_config(macronizer, create_config_ini):
+def test_macronizer_init_stores_rftagger_dir_from_config(
+    macronizer, create_config_ini, db_conn
+):
     """
     Verifies that Macronizer.__init__ correctly reads the config file
     and stores the value in the `rftagger_dir` attribute.
@@ -582,19 +591,21 @@ def test_macronizer_init_stores_rftagger_dir_from_config(macronizer, create_conf
     config_path = create_config_ini(ini_content)
 
     # Act
-    mz = macronizer.Macronizer(config_path=config_path)
+    mz = macronizer.Macronizer(db_conn, config_path=config_path)
 
     # Assert
     assert mz.rftagger_dir == "/path/from/config"
 
 
-def test_macronizer_settext_passes_configured_path_to_addtags(macronizer, mocker):
+def test_macronizer_settext_passes_configured_path_to_addtags(
+    macronizer, mocker, db_conn
+):
     """
     Verifies that Macronizer.settext calls tokenization.addtags
     using the value stored in `self.rftagger_dir`.
     """
     # Arrange
-    mz = macronizer.Macronizer(config_path="dummy.ini")
+    mz = macronizer.Macronizer(db_conn, config_path="dummy.ini")
     mz.rftagger_dir = "/path/stored/in/self"
 
     # We only need to mock two things:
@@ -694,13 +705,13 @@ class TestWordlist:
     """Tests for the `Wordlist` class."""
 
     def test_loadwordfromdb_raises_unrelated_errors_directly(
-        self, macronizer, mocker, monkeypatch
+        self, macronizer, mocker, monkeypatch, db_conn
     ):
         """
         Verifies that a non-database error is not caught and masked.
         """
         # Arrange
-        wl = macronizer.Wordlist()
+        wl = macronizer.Wordlist(db_conn)
         mock_cursor = mocker.MagicMock()
         mock_cursor.execute.side_effect = TypeError("A programming mistake!")
         monkeypatch.setattr(wl, "dbcursor", mock_cursor)
@@ -713,13 +724,13 @@ class TestWordlist:
         assert not isinstance(exc_info.value, macronizer.DatabaseError)
 
     def test_loadwordfromdb_converts_sqlite_error_to_database_error(
-        self, macronizer, mocker, monkeypatch
+        self, macronizer, mocker, monkeypatch, db_conn
     ):
         """
         Verifies that a genuine sqlite3.Error is correctly caught and re-raised.
         """
         # Arrange
-        wl = macronizer.Wordlist()
+        wl = macronizer.Wordlist(db_conn)
         mock_cursor = mocker.MagicMock()
         mock_error = sqlite3.OperationalError("mocked DB failure")
         mock_cursor.execute.side_effect = mock_error
@@ -801,12 +812,12 @@ def test_toascii_handles_y_diaeresis_correctly(macronizer):
     assert macronizer.toascii("test_ÿ_test") == "test_y_test"
 
 
-def test_crunchwords_parsing(macronizer, monkeypatch):
+def test_crunchwords_parsing(macronizer, monkeypatch, db_conn):
     """
     Verifies the Morpheus output parser
     """
     # Arrange
-    wl = macronizer.Wordlist()
+    wl = macronizer.Wordlist(db_conn)
     wl.reinitializedatabase()
 
     morpheus_output = (
@@ -845,7 +856,7 @@ def test_crunchwords_parsing(macronizer, monkeypatch):
     assert results.get("cano") is not None
 
 
-def test_crunchwords_parsing_raises_on_dangling_word(macronizer, monkeypatch):
+def test_crunchwords_parsing_raises_on_dangling_word(macronizer, monkeypatch, db_conn):
     """
     Verifies that the Morpheus output parser raises exception on a truncated
     output file where a final word line is not followed by its parse line.
@@ -853,7 +864,7 @@ def test_crunchwords_parsing_raises_on_dangling_word(macronizer, monkeypatch):
     This ensures no data is silently lost with anomalous Morpheus output.
     """
     # Arrange
-    wl = macronizer.Wordlist()
+    wl = macronizer.Wordlist(db_conn)
     wl.reinitializedatabase()
 
     # This Morpheus output is intentionally malformed.

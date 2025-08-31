@@ -27,6 +27,7 @@ def test_main_cli_uses_default_config_path_when_unspecified(mocker, monkeypatch)
     # Arrange
     # Use --test to prevent reading from stdin and simplify the execution path
     monkeypatch.setattr(sys, "argv", ["macronize.py", "--test"])
+    mocker.patch("sqlite3.connect")
 
     mock_macronizer = mocker.patch("macronize.Macronizer")
 
@@ -38,7 +39,7 @@ def test_main_cli_uses_default_config_path_when_unspecified(mocker, monkeypatch)
     macronize.main_cli()
 
     # Assert
-    mock_macronizer.assert_called_once_with("config.ini")
+    mock_macronizer.assert_called_once_with(mocker.ANY, "config.ini")
 
 
 def test_main_cli_uses_custom_config_path_with_relative_path(
@@ -57,6 +58,8 @@ def test_main_cli_uses_custom_config_path_with_relative_path(
         sys, "argv", ["macronize.py", "--config", relative_path, "--test"]
     )
 
+    mocker.patch("sqlite3.connect")
+
     mock_macronizer = mocker.patch("macronize.Macronizer")
     mock_instance = mocker.MagicMock()
     mock_instance.gettext.return_value = "mocked output text"
@@ -66,7 +69,7 @@ def test_main_cli_uses_custom_config_path_with_relative_path(
     macronize.main_cli()
 
     # Assert
-    mock_macronizer.assert_called_once_with(relative_path)
+    mock_macronizer.assert_called_once_with(mocker.ANY, relative_path)
 
 
 def test_main_cli_uses_custom_config_path_with_absolute_path(
@@ -83,6 +86,7 @@ def test_main_cli_uses_custom_config_path_with_absolute_path(
         sys, "argv", ["macronize.py", "--config", absolute_path, "--test"]
     )
 
+    mocker.patch("sqlite3.connect")
     mock_macronizer = mocker.patch("macronize.Macronizer")
     mock_instance = mocker.MagicMock()
     mock_instance.gettext.return_value = "mocked output text"
@@ -92,7 +96,7 @@ def test_main_cli_uses_custom_config_path_with_absolute_path(
     macronize.main_cli()
 
     # Assert
-    mock_macronizer.assert_called_once_with(absolute_path)
+    mock_macronizer.assert_called_once_with(mocker.ANY, absolute_path)
 
 
 def test_main_cli_initialization_does_not_error_on_missing_config_file(
@@ -109,6 +113,7 @@ def test_main_cli_initialization_does_not_error_on_missing_config_file(
         sys, "argv", ["macronize.py", "--config", non_existent_path, "--test"]
     )
 
+    mocker.patch("sqlite3.connect")
     mock_macronizer = mocker.patch("macronize.Macronizer")
     mock_instance = mocker.MagicMock()
     mock_instance.gettext.return_value = "mocked output text"
@@ -118,7 +123,7 @@ def test_main_cli_initialization_does_not_error_on_missing_config_file(
     macronize.main_cli()
 
     # Assert
-    mock_macronizer.assert_called_once_with(non_existent_path)
+    mock_macronizer.assert_called_once_with(mocker.ANY, non_existent_path)
 
 
 def test_main_cgi_initializes_macronizer_with_default_config(mocker, monkeypatch):
@@ -135,6 +140,8 @@ def test_main_cgi_initializes_macronizer_with_default_config(mocker, monkeypatch
         "doevaluate": "on",
     }.get(key, default)
     mocker.patch("cgi.FieldStorage", return_value=mock_field_storage)
+
+    mocker.patch("sqlite3.connect")
     # Patch the Macronizer class.
     mock_macronizer = mocker.patch("macronize.Macronizer")
     # Configure the mock instance to prevent downstream errors.
@@ -151,4 +158,4 @@ def test_main_cgi_initializes_macronizer_with_default_config(mocker, monkeypatch
     macronize.main_cgi()
 
     # Assert
-    mock_macronizer.assert_called_once_with()
+    mock_macronizer.assert_called_once_with(mocker.ANY)

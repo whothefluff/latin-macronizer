@@ -20,10 +20,12 @@ import argparse
 import cgi
 import codecs
 import os
+import sqlite3
 import sys
 import unicodedata
 from typing import List, Tuple
 
+from macronizer import DB_NAME as DB_PATH
 from macronizer import Macronizer, evaluate
 
 SCANSIONS: List[Tuple[str, List[Macronizer.ScansionRules]]] = [
@@ -63,7 +65,7 @@ def create_html_page(
         macronizedtext = ""
     else:
         try:
-            macronizer = Macronizer()
+            macronizer = Macronizer(sqlite3.connect(DB_PATH))
             macronizer.settext(texttomacronize)
             if scan > 0:
                 macronizer.scan(SCANSIONS[scan][1])
@@ -374,58 +376,58 @@ def main_cli() -> None:
     )
     args = parser.parse_args()
 
-    if args.initialize:
+    with sqlite3.connect(DB_PATH) as db_conn:
+        if args.initialize:
+            try:
+                macronizer = Macronizer(db_conn, args.config)
+                macronizer.wordlist.reinitializedatabase()
+            except Exception as inst:
+                print(inst.args[0])
+                exit(1)
+            exit(0)
+
+        if args.listscans:
+            for i, [description, _] in enumerate(SCANSIONS):
+                print(f"{i}: {description}")
+            exit(0)
+
+        macronizer = Macronizer(db_conn, args.config)
+        if args.test:
+            texttomacronize = "O orbis terrarum te saluto!\n"
+        else:
+            if args.infile is None:
+                if sys.version_info[0] < 3:
+                    infile = codecs.getreader("utf-8")(sys.stdin)
+                else:
+                    infile = sys.stdin
+            else:
+                infile = codecs.open(args.infile, "r", "utf8")
+            texttomacronize = infile.read()
+        # endif
+        texttomacronize = unicodedata.normalize("NFC", texttomacronize)
+        macronizer.settext(texttomacronize)
         try:
-            macronizer = Macronizer(args.config)
-            macronizer.wordlist.reinitializedatabase()
-        except Exception as inst:
-            print(inst.args[0])
-            exit(1)
-        exit(0)
-
-    if args.listscans:
-        for i, [description, _] in enumerate(SCANSIONS):
-            print(f"{i}: {description}")
-        exit(0)
-
-    macronizer = Macronizer(args.config)
-    if args.test:
-        texttomacronize = "O orbis terrarum te saluto!\n"
-    else:
-        if args.infile is None:
-            if sys.version_info[0] < 3:
-                infile = codecs.getreader("utf-8")(sys.stdin)
-            else:
-                infile = sys.stdin
+            scan = int(args.scan)
+        except:
+            scan = 0
+        if scan > 0:
+            macronizer.scan(SCANSIONS[scan][1])
+        macronizedtext = macronizer.gettext(
+            not args.nomacrons, args.maius, args.utov, args.itoj, markambigs=False
+        )
+        if args.evaluate:
+            (accuracy, _) = evaluate(texttomacronize, macronizedtext)
+            print(f"Accuracy: {accuracy * 100}")
         else:
-            infile = codecs.open(args.infile, "r", "utf8")
-        texttomacronize = infile.read()
-    # endif
-    texttomacronize = unicodedata.normalize("NFC", texttomacronize)
-    macronizer.settext(texttomacronize)
-    try:
-        scan = int(args.scan)
-    except:
-        scan = 0
-    if scan > 0:
-        macronizer.scan(SCANSIONS[scan][1])
-    macronizedtext = macronizer.gettext(
-        not args.nomacrons, args.maius, args.utov, args.itoj, markambigs=False
-    )
-    if args.evaluate:
-        (accuracy, _) = evaluate(texttomacronize, macronizedtext)
-        print(f"Accuracy: {accuracy * 100}")
-    else:
-        if args.outfile is None:
-            if sys.version_info[0] < 3:
-                outfile = codecs.getwriter("utf8")(sys.stdout)
+            if args.outfile is None:
+                if sys.version_info[0] < 3:
+                    outfile = codecs.getwriter("utf8")(sys.stdout)
+                else:
+                    outfile = sys.stdout
             else:
-                outfile = sys.stdout
-        else:
-            outfile = codecs.open(args.outfile, "w", "utf8")
-        outfile.write(macronizedtext)
-    # endif
-# endif
+                outfile = codecs.open(args.outfile, "w", "utf8")
+            outfile.write(macronizedtext)
+
 
 if __name__ == "__main__":
     if "REQUEST_METHOD" in os.environ:
