@@ -23,21 +23,10 @@ import os
 import sqlite3
 import sys
 import unicodedata
-from typing import List, Tuple
 
 from macronizer import DB_NAME as DB_PATH
-from macronizer import Macronizer, evaluate
+from macronizer import SCANSIONS, Macronizer, evaluate
 
-SCANSIONS: List[Tuple[str, List[Macronizer.ScansionRules]]] = [
-    ("prose (no scansion)", []),
-    ("dactylic hexameters", [Macronizer.dactylichexameter]),
-    ("elegiac distichs", [Macronizer.dactylichexameter, Macronizer.dactylicpentameter]),
-    ("hendecasyllables", [Macronizer.hendecasyllable]),
-    (
-        "iambic trimeter + dimeter",
-        [Macronizer.iambictrimeter, Macronizer.iambicdimeter],
-    ),
-]
 TRUNCATETHRESHOLD = 50000  # Set to -1 to disable
 DEBUGCOMMAND = "DEBUG\n"
 
@@ -370,9 +359,7 @@ def main_cli() -> None:
         help="test accuracy against input gold standard",
     )
     parser.add_argument(
-        "-c", "--config",
-        default="config.ini",
-        help="Path to the configuration file"
+        "-c", "--config", default="config.ini", help="Path to the configuration file"
     )
     args = parser.parse_args()
 
@@ -431,6 +418,6 @@ def main_cli() -> None:
 
 if __name__ == "__main__":
     if "REQUEST_METHOD" in os.environ:
-        main_cgi() # If run as a CGI script
+        main_cgi()  # If run as a CGI script
     else:
-        main_cli() # Run as a free-standing Python script
+        main_cli()  # Run as a free-standing Python script
