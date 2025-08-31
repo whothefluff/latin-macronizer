@@ -24,7 +24,7 @@ import subprocess
 from collections import defaultdict
 from html import escape
 from tempfile import NamedTemporaryFile
-from typing import List, Tuple
+from typing import List, Tuple, TypedDict
 
 import postags
 from lemmas import lemma_frequency, word_lemma_freq, wordform_to_corpus_lemmas
@@ -497,6 +497,14 @@ prefixeswithshortj = (
 )
 
 
+class WordResult(TypedDict):
+    word: str
+    is_word: bool
+    macronized: str
+    uncertainty_mask: int
+    candidates: list[str]
+
+
 class Token:
     def __init__(self, text):
         self.tag = ""
@@ -648,6 +656,67 @@ class Token:
         self.macronized = self.get_macronized(
             domacronize, alsomaius, performutov, performitoj
         )
+
+    def get_structured_output(self, macronized: str) -> WordResult:
+        """
+        Reads the token's state and generates a structured dictionary.
+        """
+
+        if not self.isword:
+            return {
+                "word": self.text,
+                "is_word": self.isword,
+                "macronized": macronized,
+                "uncertainty_mask": 0,
+                "candidates": [],
+            }
+
+        final_macronized_text = postags.unicodeaccents(macronized)
+
+        if self.isunknown:
+            word_len = len(final_macronized_text)
+            return {
+                "word": self.text,
+                "is_word": self.isword,
+                "macronized": macronized,
+                "uncertainty_mask": (1 << word_len) - 1 if word_len > 0 else 0,
+                "candidates": [],
+            }
+
+        uncertainty_mask = 0
+        unique_candidates = [
+            postags.unicodeaccents(c.replace("^", ""))
+            for c in dict.fromkeys(self.accented)
+        ]
+        # Only enter if there is a real, mappable ambiguity to calculate.
+        if len(unique_candidates) > 1:
+            best_guess_unicode = unique_candidates[0]
+            base_skeleton = postags.removemacrons(best_guess_unicode)
+            comparable_candidates = [
+                cand
+                for cand in unique_candidates
+                if postags.removemacrons(cand) == base_skeleton
+            ]
+            # The core logic: only calculate a non-zero mask if there is more
+            # than one candidate with the *exact same word skeleton*.
+            if len(comparable_candidates) > 1:
+                for char_index, char in enumerate(base_skeleton):
+                    # Only check for ambiguity on vowels.
+                    if char.lower() in "aeiouy":
+                        # Collect all vowel states (e.g., {'i', 'ī'}) from candidates at this specific character index.
+                        macron_states_for_vowel = {
+                            cand[char_index] for cand in comparable_candidates
+                        }
+                        if len(macron_states_for_vowel) > 1:
+                            uncertainty_mask |= 1 << char_index
+
+        return {
+            "word": self.text,
+            "is_word": True,
+            "macronized": final_macronized_text,
+            "uncertainty_mask": uncertainty_mask,
+            "candidates": unique_candidates[1:],
+        }
 
 
 class Tokenization:
@@ -1341,10 +1410,19 @@ class Tokenization:
                     result.append(token.macronized)
         return "".join(result)
 
-    # enddef
-
-
-# endclass
+    def get_structured_output(
+        self, domacronize: bool, alsomaius: bool, performutov: bool, performitoj: bool
+    ) -> list[WordResult]:
+        """
+        Generates a list of structured data for each token
+        """
+        result = []
+        for token in self.tokens:
+            macr = token.get_macronized(
+                domacronize, alsomaius, performutov, performitoj
+            )
+            result.append(token.get_structured_output(macr))
+        return result
 
 
 class Macronizer:
