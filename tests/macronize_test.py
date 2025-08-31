@@ -131,15 +131,14 @@ def test_main_cgi_initializes_macronizer_with_default_config(mocker, monkeypatch
     Verifies that main_cgi() instantiates Macronizer with the default path arg.
     """
     # Arrange
-    # Mock the necessary CGI environment variable for the function to run.
+    # Mock the CGI environment variables
     monkeypatch.setenv("REQUEST_URI", "/test.cgi")
-    # Mock cgi.FieldStorage.
-    mock_field_storage = mocker.MagicMock()
-    mock_field_storage.getvalue.side_effect = lambda key, default="": {
-        "textcontent": "test text",
-        "doevaluate": "on",
-    }.get(key, default)
-    mocker.patch("cgi.FieldStorage", return_value=mock_field_storage)
+    monkeypatch.setenv("REQUEST_METHOD", "POST")
+    # Prepare the form data as a URL-encoded string (what stdin receives)
+    form_body = "textcontent=test text&doevaluate=on"
+    monkeypatch.setenv("CONTENT_LENGTH", str(len(form_body)))
+    # Mock stdin.read() to return our simulated form data.
+    mocker.patch("sys.stdin.read", return_value=form_body)
 
     mocker.patch("sqlite3.connect")
     # Patch the Macronizer class.

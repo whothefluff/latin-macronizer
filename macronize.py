@@ -17,12 +17,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import argparse
-import cgi
 import codecs
 import os
 import sqlite3
 import sys
 import unicodedata
+from urllib.parse import parse_qsl
 
 from macronizer import DB_NAME as DB_PATH
 from macronizer import SCANSIONS, Macronizer, evaluate
@@ -295,17 +295,21 @@ def main_cgi() -> None:
     print("Content-type:text/html\n\n")
 
     scriptname = os.environ["REQUEST_URI"].split("/")[-1]
-    htmlform = cgi.FieldStorage()
-    texttomacronize = htmlform.getvalue("textcontent", "")
-    domacronize = bool(not texttomacronize or htmlform.getvalue("macronize"))
-    alsomaius = bool(htmlform.getvalue("alsomaius"))
-    try:
-        scan = int(htmlform.getvalue("scan"))
-    except:
-        scan = 0
-    performitoj = bool(htmlform.getvalue("itoj"))
-    performutov = bool(htmlform.getvalue("utov"))
-    doevaluate = bool(htmlform.getvalue("doevaluate"))
+
+    if os.environ["REQUEST_METHOD"] == "POST":
+        body = sys.stdin.read(int(os.environ.get("CONTENT_LENGTH", 0)))
+    else:
+        body = os.environ.get("QUERY_STRING", "")
+
+    form_data = dict(parse_qsl(body))
+
+    texttomacronize = form_data.get("textcontent", "")
+    domacronize = bool(not texttomacronize or form_data.get("macronize"))
+    alsomaius = bool(form_data.get("alsomaius"))
+    scan = int(form_data.get("scan", 0) or 0)
+    performitoj = bool(form_data.get("itoj"))
+    performutov = bool(form_data.get("utov"))
+    doevaluate = bool(form_data.get("doevaluate"))
 
     print(
         create_html_page(
