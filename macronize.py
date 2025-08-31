@@ -61,7 +61,7 @@ def create_html_page(
             macronizedtext = macronizer.gettext(
                 domacronize, alsomaius, performutov, performitoj, markambigs=False
             )
-        except Exception as inst:
+        except Exception as inst:  # pylint: disable=broad-exception-caught
             errormessage = inst.args[0]
             macronizedtext = ""
 
@@ -334,7 +334,15 @@ def main_cli() -> None:
     parser.add_argument(
         "-j", "--itoj", action="store_true", help="similarly convert i to j"
     )
-    parser.add_argument("-s", "--scan", help="try to scan using metre SCAN")
+    parser.add_argument(
+        "-s",
+        "--scan",
+        type=int,
+        default=0,
+        choices=range(len(SCANSIONS)),
+        metavar="N",
+        help=f"try to scan using metre index N (0..{len(SCANSIONS)-1}); use --listscans to see options",
+    )
     parser.add_argument(
         "--listscans", action="store_true", help="list available metres"
     )
@@ -368,15 +376,14 @@ def main_cli() -> None:
             try:
                 macronizer = Macronizer(db_conn, args.config)
                 macronizer.wordlist.reinitializedatabase()
-            except Exception as inst:
-                print(inst.args[0])
-                exit(1)
-            exit(0)
+            except Exception as inst:  # pylint: disable=broad-exception-caught
+                sys.exit(f"Initialization failed: {inst}")
+            return
 
         if args.listscans:
             for i, [description, _] in enumerate(SCANSIONS):
                 print(f"{i}: {description}")
-            exit(0)
+            return
 
         macronizer = Macronizer(db_conn, args.config)
         if args.test:
@@ -393,10 +400,7 @@ def main_cli() -> None:
         # endif
         texttomacronize = unicodedata.normalize("NFC", texttomacronize)
         macronizer.settext(texttomacronize)
-        try:
-            scan = int(args.scan)
-        except:
-            scan = 0
+        scan = args.scan
         if scan > 0:
             macronizer.scan(SCANSIONS[scan][1])
         macronizedtext = macronizer.gettext(
