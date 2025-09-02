@@ -684,10 +684,11 @@ class Token:
             }
 
         uncertainty_mask = 0
-        unique_candidates = [
-            postags.unicodeaccents(c.replace("^", ""))
-            for c in dict.fromkeys(self.accented)
-        ]
+        unique_candidates = list(
+            dict.fromkeys(
+                postags.unicodeaccents(c.replace("^", "")) for c in self.accented
+            )
+        )
         # Only enter if there is a real, mappable ambiguity to calculate.
         if len(unique_candidates) > 1:
             best_guess_unicode = unique_candidates[0]

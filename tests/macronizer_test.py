@@ -1119,7 +1119,7 @@ class TestTokenGetStructuredOutput:
             "mala", accented_forms=["ma_la_", "mala_", "ma_la", "mala"]
         )
         result = token.get_structured_output("mala")
-        assert result["candidates"] == ["malā", "māla","mala"]
+        assert result["candidates"] == ["malā", "māla", "mala"]
 
     def test_returns_empty_candidates_list_for_unambiguous_word(self, _setup_token):
         token = _setup_token("quorum", accented_forms=["quo_rum"])
@@ -1140,3 +1140,29 @@ class TestTokenGetStructuredOutput:
         token = _setup_token("test", accented_forms=["te_st"])
         result = token.get_structured_output("te_st")
         assert result["macronized"] == "tēst"
+
+    def test_deduplicates_candidates_after_processing_special_notation(
+        self, _setup_token
+    ):
+        """
+        Verifies that candidates are made unique *after* processing notations
+        """
+        # Arrange
+        accented_forms = ["pro_spera", "pro_spera_", "pro_spe^ra", "pro_spe^ra_"]
+        token = _setup_token("prospera", accented_forms=accented_forms)
+
+        # Act
+        # The first form 'pro_spera' will be the best guess
+        result = token.get_structured_output("pro_spera")
+
+        # Assert
+        # The primary macronized form should be the unicode version of the best guess.
+        assert result["macronized"] == "prōspera"
+        # The candidates list should contain only the unique, alternative forms.
+        #    'pro_spera_' and 'pro_spe^ra_' both become 'prōsperā'.
+        #    The duplicate 'prōspera' from 'pro_spe^ra' should be removed.
+        assert result["candidates"] == ["prōsperā"]
+        # The uncertainty mask should be based on the ambiguity between the
+        #    unique candidates: 'prōspera' vs 'prōsperā'. The final 'a' is ambiguous.
+        #    The word 'prospera' is 8 chars long, so the last char is at index 7 (2^7)
+        assert result["uncertainty_mask"] == 128
