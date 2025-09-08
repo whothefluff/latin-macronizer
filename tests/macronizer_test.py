@@ -1,4 +1,3 @@
-import importlib
 import os
 import sqlite3
 import subprocess
@@ -50,18 +49,15 @@ def macronizer_fixture(
     monkeypatch,
     tmp_path,
 ):
-    # pytest runs the `stub_modules` fixture first, which mocks dependencies.
-    # This allows the subsequent import of `macronizer` inside this fixture to succeed.
+
+    import importlib  # pylint: disable=import-outside-toplevel
+
     import macronizer as mod  # pylint: disable=import-outside-toplevel
 
     importlib.reload(mod)
 
-    db_path = tmp_path / "test_macronizer.db"
     macrons_txt = tmp_path / "macrons.txt"
     macrons_txt.write_text("", encoding="utf-8")
-
-    monkeypatch.setattr(mod, "USE_DB", True)
-    monkeypatch.setattr(mod, "DB_NAME", str(db_path))
     monkeypatch.setattr(mod, "MACRONS_FILE", str(macrons_txt))
 
     return mod
@@ -79,6 +75,80 @@ def create_config_ini_fixture(tmp_path):
         return str(config_file)
 
     return _create
+
+
+@pytest.fixture(name="db_conn")
+def db_conn_fixture():
+    """Provides a fresh, in-memory sqlite3 database connection for each test."""
+
+    conn = sqlite3.connect(":memory:")
+    yield conn
+    conn.close()
+
+
+@pytest.fixture(name="functional_macronizer")
+def functional_macronizer_fixture(monkeypatch, tmp_path):
+    """
+    A dedicated, self-contained fixture for testing structured output.
+
+    It creates functional stubs for the 'postags' module to ensure that
+    methods like removemacrons and unicodeaccents behave correctly for the
+    tests that depend on them.
+    """
+
+    # --- Part 1: Create functional stubs ---
+    def _remove_macrons(text):
+        macron_map = str.maketrans("āēīōūȳ_", "aeiouy ")
+        return text.translate(macron_map).replace(" ", "")
+
+    def _unicodeaccents(text):
+        return (
+            text.replace("a_", "ā")
+            .replace("e_", "ē")
+            .replace("i_", "ī")
+            .replace("o_", "ō")
+            .replace("u_", "ū")
+            .replace("y_", "ȳ")
+        )
+
+    postags_stub = types.ModuleType("postags")
+    postags_stub.removemacrons = _remove_macrons
+    postags_stub.unicodeaccents = _unicodeaccents
+    # Add other required attributes so the module can load
+    postags_stub.LEMMA = 0
+    postags_stub.ACCENTEDFORM = 1
+    postags_stub.tag_distance = lambda a, b: 0
+    postags_stub.parse_to_ldt = lambda p: "TAG"
+    postags_stub.morpheus_to_parses = lambda w, n: [[f"{w}-l", f"{w}-a"]]
+    sys.modules["postags"] = postags_stub
+
+    # Create minimal stubs for other dependencies
+    lemmas_stub = types.ModuleType("lemmas")
+    lemmas_stub.lemma_frequency = {}
+    lemmas_stub.word_lemma_freq = {}
+    lemmas_stub.wordform_to_corpus_lemmas = {}
+    sys.modules["lemmas"] = lemmas_stub
+
+    mac_end_stub = types.ModuleType("macronized_endings")
+    mac_end_stub.tag_to_endings = {}
+    sys.modules["macronized_endings"] = mac_end_stub
+
+    # --- Part 2: Import and prepare the macronizer module ---
+    import importlib  # pylint: disable=import-outside-toplevel
+
+    import macronizer as mod  # pylint: disable=import-outside-toplevel
+
+    importlib.reload(mod)  # Ensure a fresh import with our stubs
+
+    macrons_txt = tmp_path / "macrons.txt"
+    macrons_txt.write_text("", encoding="utf-8")
+    monkeypatch.setattr(mod, "MACRONS_FILE", str(macrons_txt))
+
+    yield mod  # Provide the freshly-prepared module to the tests
+
+    # --- Part 3: Teardown ---
+    for name in ("postags", "lemmas", "macronized_endings"):
+        sys.modules.pop(name, None)
 
 
 def test_run_external_maps_filenotfound(macronizer, monkeypatch):
@@ -127,8 +197,10 @@ def test_run_external_success(macronizer, monkeypatch):
     assert macronizer.run_external(["true"]) is not None
 
 
-def test_crunchwords_raises_when_cruncher_missing(macronizer, tmp_path, monkeypatch):
-    wl = macronizer.Wordlist()
+def test_crunchwords_raises_when_cruncher_missing(
+    macronizer, tmp_path, monkeypatch, db_conn
+):
+    wl = macronizer.Wordlist(db_conn)
     wl.reinitializedatabase()
 
     # Point MORPHEUS_DIR to a temp dir WITHOUT cruncher
@@ -140,9 +212,9 @@ def test_crunchwords_raises_when_cruncher_missing(macronizer, tmp_path, monkeypa
 
 
 def test_crunchwords_inserts_unknown_when_no_output_and_cleans_tempfiles(
-    macronizer, tmp_path, monkeypatch
+    macronizer, tmp_path, monkeypatch, db_conn
 ):
-    wl = macronizer.Wordlist()
+    wl = macronizer.Wordlist(db_conn)
     wl.reinitializedatabase()
 
     # Provide executable cruncher so path check passes
@@ -184,8 +256,8 @@ def test_crunchwords_inserts_unknown_when_no_output_and_cleans_tempfiles(
         assert not os.path.exists(name)
 
 
-def test_crunchwords_sets_morphlib_env(macronizer, tmp_path, monkeypatch):
-    wl = macronizer.Wordlist()
+def test_crunchwords_sets_morphlib_env(macronizer, tmp_path, monkeypatch, db_conn):
+    wl = macronizer.Wordlist(db_conn)
     wl.reinitializedatabase()
 
     # Provide executable cruncher
@@ -461,6 +533,24 @@ class TestTokenMacronize:
         # The 'alsomaius' logic should be skipped, and no macron should be added.
         assert token.macronized == "rejecit"
 
+    def test_sets_macronized_attribute_from_get_macronized(self, macronizer, mocker):
+        """
+        Verifies that Token.macronize() sets the `macronized` attribute
+        with the return value from its method `get_macronized`.
+        """
+        # Arrange
+        token = macronizer.Token("testword")
+        stubbed_return_value = "MACRONIZED_FORM"
+        mocker.patch.object(token, "get_macronized", return_value=stubbed_return_value)
+
+        # Act
+        token.macronize(
+            domacronize=True, alsomaius=False, performutov=False, performitoj=False
+        )
+
+        # Assert
+        assert token.macronized == stubbed_return_value
+
 
 class TestTokenizationScanverses:
     """
@@ -554,7 +644,9 @@ class TestTokenizationScanverses:
         assert selected == "ba"
 
 
-def test_macronizer_init_stores_rftagger_dir_from_config(macronizer, create_config_ini):
+def test_macronizer_init_stores_rftagger_dir_from_config(
+    macronizer, create_config_ini, db_conn
+):
     """
     Verifies that Macronizer.__init__ correctly reads the config file
     and stores the value in the `rftagger_dir` attribute.
@@ -564,19 +656,21 @@ def test_macronizer_init_stores_rftagger_dir_from_config(macronizer, create_conf
     config_path = create_config_ini(ini_content)
 
     # Act
-    mz = macronizer.Macronizer(config_path=config_path)
+    mz = macronizer.Macronizer(db_conn, config_path=config_path)
 
     # Assert
     assert mz.rftagger_dir == "/path/from/config"
 
 
-def test_macronizer_settext_passes_configured_path_to_addtags(macronizer, mocker):
+def test_macronizer_settext_passes_configured_path_to_addtags(
+    macronizer, mocker, db_conn
+):
     """
     Verifies that Macronizer.settext calls tokenization.addtags
     using the value stored in `self.rftagger_dir`.
     """
     # Arrange
-    mz = macronizer.Macronizer(config_path="dummy.ini")
+    mz = macronizer.Macronizer(db_conn, config_path="dummy.ini")
     mz.rftagger_dir = "/path/stored/in/self"
 
     # We only need to mock two things:
@@ -676,13 +770,13 @@ class TestWordlist:
     """Tests for the `Wordlist` class."""
 
     def test_loadwordfromdb_raises_unrelated_errors_directly(
-        self, macronizer, mocker, monkeypatch
+        self, macronizer, mocker, monkeypatch, db_conn
     ):
         """
         Verifies that a non-database error is not caught and masked.
         """
         # Arrange
-        wl = macronizer.Wordlist()
+        wl = macronizer.Wordlist(db_conn)
         mock_cursor = mocker.MagicMock()
         mock_cursor.execute.side_effect = TypeError("A programming mistake!")
         monkeypatch.setattr(wl, "dbcursor", mock_cursor)
@@ -695,13 +789,13 @@ class TestWordlist:
         assert not isinstance(exc_info.value, macronizer.DatabaseError)
 
     def test_loadwordfromdb_converts_sqlite_error_to_database_error(
-        self, macronizer, mocker, monkeypatch
+        self, macronizer, mocker, monkeypatch, db_conn
     ):
         """
         Verifies that a genuine sqlite3.Error is correctly caught and re-raised.
         """
         # Arrange
-        wl = macronizer.Wordlist()
+        wl = macronizer.Wordlist(db_conn)
         mock_cursor = mocker.MagicMock()
         mock_error = sqlite3.OperationalError("mocked DB failure")
         mock_cursor.execute.side_effect = mock_error
@@ -783,12 +877,12 @@ def test_toascii_handles_y_diaeresis_correctly(macronizer):
     assert macronizer.toascii("test_ÿ_test") == "test_y_test"
 
 
-def test_crunchwords_parsing(macronizer, monkeypatch):
+def test_crunchwords_parsing(macronizer, monkeypatch, db_conn):
     """
     Verifies the Morpheus output parser
     """
     # Arrange
-    wl = macronizer.Wordlist()
+    wl = macronizer.Wordlist(db_conn)
     wl.reinitializedatabase()
 
     morpheus_output = (
@@ -827,7 +921,7 @@ def test_crunchwords_parsing(macronizer, monkeypatch):
     assert results.get("cano") is not None
 
 
-def test_crunchwords_parsing_raises_on_dangling_word(macronizer, monkeypatch):
+def test_crunchwords_parsing_raises_on_dangling_word(macronizer, monkeypatch, db_conn):
     """
     Verifies that the Morpheus output parser raises exception on a truncated
     output file where a final word line is not followed by its parse line.
@@ -835,7 +929,7 @@ def test_crunchwords_parsing_raises_on_dangling_word(macronizer, monkeypatch):
     This ensures no data is silently lost with anomalous Morpheus output.
     """
     # Arrange
-    wl = macronizer.Wordlist()
+    wl = macronizer.Wordlist(db_conn)
     wl.reinitializedatabase()
 
     # This Morpheus output is intentionally malformed.
@@ -929,3 +1023,146 @@ def test_scanverse_handles_penalties_greater_than_100(macronizer):
 
     # Assert
     assert tokenization.scannedfeet == ["S"]
+
+
+def test_tokenization_get_structured_output_orchestrates_calls_to_token_methods(
+    macronizer, mocker
+):
+    """
+    Verifies that Tokenization.get_structured_output correctly calls
+    get_macronized() and get_structured_output() on each of its tokens.
+    """
+    # Arrange
+    # Create a tokenization with a word, a space, and another word.
+    tokenization = macronizer.Tokenization("arma virumque")
+    # Mock the two methods on the Token class that will be called.
+    # We use side_effect to return a unique value for each call,
+    # allowing us to verify that the flow is correct.
+    mocker.patch(
+        "macronizer.Token.get_macronized",
+        side_effect=["m_form1", "m_form2", "m_form3"],
+    )
+    mock_get_structured = mocker.patch(
+        "macronizer.Token.get_structured_output",
+        side_effect=["result1", "result2", "result3"],
+    )
+    # These are the arguments we expect to be passed to get_macronized()
+    # for each of the three tokens.
+    expected_macronize_args = {
+        "domacronize": True,
+        "alsomaius": False,
+        "performutov": True,
+        "performitoj": False,
+    }
+
+    # Act
+    final_results = tokenization.get_structured_output(**expected_macronize_args)
+
+    # Assert
+    # The final list must be the collected results from get_structured_output.
+    assert final_results == ["result1", "result2", "result3"]
+    # Verify that get_structured_output was called with the output
+    # from get_macronized for each respective token.
+    assert mock_get_structured.call_args_list[0] == mocker.call("m_form1")
+    assert mock_get_structured.call_args_list[1] == mocker.call("m_form2")
+    assert mock_get_structured.call_args_list[2] == mocker.call("m_form3")
+
+
+class TestTokenGetStructuredOutput:
+    """
+    Tests for the Token.get_structured_output method.
+    """
+
+    @pytest.fixture
+    def _setup_token(self, functional_macronizer):
+        """Helper fixture to create and configure a token for tests."""
+
+        def _factory(text, accented_forms=None, is_unknown=False):
+            # Use the Token class from the dedicated fixture's module
+            token = functional_macronizer.Token(text)
+            if accented_forms is not None:
+                token.accented = accented_forms
+            token.isunknown = is_unknown
+            return token
+
+        return _factory
+
+    def test_returns_correct_structure_for_non_word(self, _setup_token):
+        token = _setup_token(" ")
+        result = token.get_structured_output(" ")
+        assert result["is_word"] is False
+
+    def test_returns_full_bitmask_for_unknown_word(self, _setup_token):
+        token = _setup_token("ignotus", is_unknown=True)
+        result = token.get_structured_output("ignotus")
+        assert result["uncertainty_mask"] == 127  # 2^7 - 1
+
+    def test_returns_zero_mask_for_unambiguous_word(self, _setup_token):
+        token = _setup_token("non", accented_forms=["no_n"])
+        result = token.get_structured_output("no_n")
+        assert result["uncertainty_mask"] == 0
+
+    def test_sets_correct_bit_for_single_ambiguous_vowel(self, _setup_token):
+        token = _setup_token("uenit", accented_forms=["ue_nit", "uenit"])
+        result = token.get_structured_output("ue_nit")
+        assert result["uncertainty_mask"] == 2  # 2^1
+
+    def test_sets_correct_bits_for_multiple_ambiguous_vowels(self, _setup_token):
+        token = _setup_token(
+            "mala", accented_forms=["ma_la_", "mala_", "ma_la", "mala"]
+        )
+        result = token.get_structured_output("ma_la_")
+        assert result["uncertainty_mask"] == 10
+
+    def test_populates_candidates_list_correctly(self, _setup_token):
+        token = _setup_token(
+            "mala", accented_forms=["ma_la_", "mala_", "ma_la", "mala"]
+        )
+        result = token.get_structured_output("mala")
+        assert result["candidates"] == ["malā", "māla", "mala"]
+
+    def test_returns_empty_candidates_list_for_unambiguous_word(self, _setup_token):
+        token = _setup_token("quorum", accented_forms=["quo_rum"])
+        result = token.get_structured_output("quo_rum")
+        assert result["candidates"] == []
+
+    def test_returns_correct_mask_when_candidates_have_mismatched_skeletons(
+        self, _setup_token
+    ):
+        token = _setup_token("amica", accented_forms=["ami_ca", "ami_ca_", "ami_cus"])
+        result = token.get_structured_output("ami_ca")
+        # 'amicus' is ignored; mask is based on 'ami_ca' vs 'ami_ca_'
+        assert result["uncertainty_mask"] == 16
+
+    def test_formats_final_macronized_word_using_unicodeaccents_stub(
+        self, _setup_token
+    ):
+        token = _setup_token("test", accented_forms=["te_st"])
+        result = token.get_structured_output("te_st")
+        assert result["macronized"] == "tēst"
+
+    def test_deduplicates_candidates_after_processing_special_notation(
+        self, _setup_token
+    ):
+        """
+        Verifies that candidates are made unique *after* processing notations
+        """
+        # Arrange
+        accented_forms = ["pro_spera", "pro_spera_", "pro_spe^ra", "pro_spe^ra_"]
+        token = _setup_token("prospera", accented_forms=accented_forms)
+
+        # Act
+        # The first form 'pro_spera' will be the best guess
+        result = token.get_structured_output("pro_spera")
+
+        # Assert
+        # The primary macronized form should be the unicode version of the best guess.
+        assert result["macronized"] == "prōspera"
+        # The candidates list should contain only the unique, alternative forms.
+        #    'pro_spera_' and 'pro_spe^ra_' both become 'prōsperā'.
+        #    The duplicate 'prōspera' from 'pro_spe^ra' should be removed.
+        assert result["candidates"] == ["prōsperā"]
+        # The uncertainty mask should be based on the ambiguity between the
+        #    unique candidates: 'prōspera' vs 'prōsperā'. The final 'a' is ambiguous.
+        #    The word 'prospera' is 8 chars long, so the last char is at index 7 (2^7)
+        assert result["uncertainty_mask"] == 128

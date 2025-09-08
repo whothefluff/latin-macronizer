@@ -17,25 +17,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import argparse
-import cgi
 import codecs
 import os
+import sqlite3
 import sys
 import unicodedata
-from typing import List, Tuple
+from urllib.parse import parse_qsl
 
-from macronizer import Macronizer, evaluate
+from macronizer import DB_NAME as DB_PATH
+from macronizer import SCANSIONS, Macronizer, evaluate
 
-SCANSIONS: List[Tuple[str, List[Macronizer.ScansionRules]]] = [
-    ("prose (no scansion)", []),
-    ("dactylic hexameters", [Macronizer.dactylichexameter]),
-    ("elegiac distichs", [Macronizer.dactylichexameter, Macronizer.dactylicpentameter]),
-    ("hendecasyllables", [Macronizer.hendecasyllable]),
-    (
-        "iambic trimeter + dimeter",
-        [Macronizer.iambictrimeter, Macronizer.iambicdimeter],
-    ),
-]
 TRUNCATETHRESHOLD = 50000  # Set to -1 to disable
 DEBUGCOMMAND = "DEBUG\n"
 
@@ -63,14 +54,14 @@ def create_html_page(
         macronizedtext = ""
     else:
         try:
-            macronizer = Macronizer()
+            macronizer = Macronizer(sqlite3.connect(DB_PATH))
             macronizer.settext(texttomacronize)
             if scan > 0:
                 macronizer.scan(SCANSIONS[scan][1])
             macronizedtext = macronizer.gettext(
                 domacronize, alsomaius, performutov, performitoj, markambigs=False
             )
-        except Exception as inst:
+        except Exception as inst:  # pylint: disable=broad-exception-caught
             errormessage = inst.args[0]
             macronizedtext = ""
 
@@ -304,17 +295,21 @@ def main_cgi() -> None:
     print("Content-type:text/html\n\n")
 
     scriptname = os.environ["REQUEST_URI"].split("/")[-1]
-    htmlform = cgi.FieldStorage()
-    texttomacronize = htmlform.getvalue("textcontent", "")
-    domacronize = bool(not texttomacronize or htmlform.getvalue("macronize"))
-    alsomaius = bool(htmlform.getvalue("alsomaius"))
-    try:
-        scan = int(htmlform.getvalue("scan"))
-    except:
-        scan = 0
-    performitoj = bool(htmlform.getvalue("itoj"))
-    performutov = bool(htmlform.getvalue("utov"))
-    doevaluate = bool(htmlform.getvalue("doevaluate"))
+
+    if os.environ["REQUEST_METHOD"] == "POST":
+        body = sys.stdin.read(int(os.environ.get("CONTENT_LENGTH", 0)))
+    else:
+        body = os.environ.get("QUERY_STRING", "")
+
+    form_data = dict(parse_qsl(body))
+
+    texttomacronize = form_data.get("textcontent", "")
+    domacronize = bool(not texttomacronize or form_data.get("macronize"))
+    alsomaius = bool(form_data.get("alsomaius"))
+    scan = int(form_data.get("scan", 0) or 0)
+    performitoj = bool(form_data.get("itoj"))
+    performutov = bool(form_data.get("utov"))
+    doevaluate = bool(form_data.get("doevaluate"))
 
     print(
         create_html_page(
@@ -343,7 +338,15 @@ def main_cli() -> None:
     parser.add_argument(
         "-j", "--itoj", action="store_true", help="similarly convert i to j"
     )
-    parser.add_argument("-s", "--scan", help="try to scan using metre SCAN")
+    parser.add_argument(
+        "-s",
+        "--scan",
+        type=int,
+        default=0,
+        choices=range(len(SCANSIONS)),
+        metavar="N",
+        help=f"try to scan using metre index N (0..{len(SCANSIONS)-1}); use --listscans to see options",
+    )
     parser.add_argument(
         "--listscans", action="store_true", help="list available metres"
     )
@@ -368,67 +371,61 @@ def main_cli() -> None:
         help="test accuracy against input gold standard",
     )
     parser.add_argument(
-        "-c", "--config",
-        default="config.ini",
-        help="Path to the configuration file"
+        "-c", "--config", default="config.ini", help="Path to the configuration file"
     )
     args = parser.parse_args()
 
-    if args.initialize:
-        try:
-            macronizer = Macronizer(args.config)
-            macronizer.wordlist.reinitializedatabase()
-        except Exception as inst:
-            print(inst.args[0])
-            exit(1)
-        exit(0)
+    with sqlite3.connect(DB_PATH) as db_conn:
+        if args.initialize:
+            try:
+                macronizer = Macronizer(db_conn, args.config)
+                macronizer.wordlist.reinitializedatabase()
+            except Exception as inst:  # pylint: disable=broad-exception-caught
+                sys.exit(f"Initialization failed: {inst}")
+            return
 
-    if args.listscans:
-        for i, [description, _] in enumerate(SCANSIONS):
-            print(f"{i}: {description}")
-        exit(0)
+        if args.listscans:
+            for i, [description, _] in enumerate(SCANSIONS):
+                print(f"{i}: {description}")
+            return
 
-    macronizer = Macronizer(args.config)
-    if args.test:
-        texttomacronize = "O orbis terrarum te saluto!\n"
-    else:
-        if args.infile is None:
-            if sys.version_info[0] < 3:
-                infile = codecs.getreader("utf-8")(sys.stdin)
-            else:
-                infile = sys.stdin
+        macronizer = Macronizer(db_conn, args.config)
+        if args.test:
+            texttomacronize = "O orbis terrarum te saluto!\n"
         else:
-            infile = codecs.open(args.infile, "r", "utf8")
-        texttomacronize = infile.read()
-    # endif
-    texttomacronize = unicodedata.normalize("NFC", texttomacronize)
-    macronizer.settext(texttomacronize)
-    try:
-        scan = int(args.scan)
-    except:
-        scan = 0
-    if scan > 0:
-        macronizer.scan(SCANSIONS[scan][1])
-    macronizedtext = macronizer.gettext(
-        not args.nomacrons, args.maius, args.utov, args.itoj, markambigs=False
-    )
-    if args.evaluate:
-        (accuracy, _) = evaluate(texttomacronize, macronizedtext)
-        print(f"Accuracy: {accuracy * 100}")
-    else:
-        if args.outfile is None:
-            if sys.version_info[0] < 3:
-                outfile = codecs.getwriter("utf8")(sys.stdout)
+            if args.infile is None:
+                if sys.version_info[0] < 3:
+                    infile = codecs.getreader("utf-8")(sys.stdin)
+                else:
+                    infile = sys.stdin
             else:
-                outfile = sys.stdout
+                infile = codecs.open(args.infile, "r", "utf8")
+            texttomacronize = infile.read()
+        # endif
+        texttomacronize = unicodedata.normalize("NFC", texttomacronize)
+        macronizer.settext(texttomacronize)
+        scan = args.scan
+        if scan > 0:
+            macronizer.scan(SCANSIONS[scan][1])
+        macronizedtext = macronizer.gettext(
+            not args.nomacrons, args.maius, args.utov, args.itoj, markambigs=False
+        )
+        if args.evaluate:
+            (accuracy, _) = evaluate(texttomacronize, macronizedtext)
+            print(f"Accuracy: {accuracy * 100}")
         else:
-            outfile = codecs.open(args.outfile, "w", "utf8")
-        outfile.write(macronizedtext)
-    # endif
-# endif
+            if args.outfile is None:
+                if sys.version_info[0] < 3:
+                    outfile = codecs.getwriter("utf8")(sys.stdout)
+                else:
+                    outfile = sys.stdout
+            else:
+                outfile = codecs.open(args.outfile, "w", "utf8")
+            outfile.write(macronizedtext)
+
 
 if __name__ == "__main__":
     if "REQUEST_METHOD" in os.environ:
-        main_cgi() # If run as a CGI script
+        main_cgi()  # If run as a CGI script
     else:
-        main_cli() # Run as a free-standing Python script
+        main_cli()  # Run as a free-standing Python script

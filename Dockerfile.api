@@ -1,0 +1,12 @@
+# Use an ARG to define the base image (allowing to specify the trained image at build time)
+ARG TRAINED_IMAGE_TAG=whothefluff/latin-macronizer:latest
+# Inherit from the image tag passed during the build
+FROM ${TRAINED_IMAGE_TAG}
+# The base image is running as 'appuser', so we can install to the venv.
+RUN /opt/venv/bin/pip install --no-cache-dir fastapi[standard]
+# Get the latest API code from the local directory
+COPY api.py .
+# Expose the port the API runs on
+EXPOSE 8000
+# Set the command to start the Uvicorn server
+CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000"]

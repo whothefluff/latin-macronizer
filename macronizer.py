@@ -24,10 +24,197 @@ import subprocess
 from collections import defaultdict
 from html import escape
 from tempfile import NamedTemporaryFile
+from typing import List, Tuple, TypedDict
 
 import postags
 from lemmas import lemma_frequency, word_lemma_freq, wordform_to_corpus_lemmas
 from macronized_endings import tag_to_endings
+
+ScansionRules = dict[tuple[int, str], tuple[int, str, int]]
+
+DACTYLICH_EXAMETER: ScansionRules = {
+    (0, "L"): (1, "", 0),
+    (0, "S"): (-1, "", 0),
+    (1, "L"): (3, "S", 0),
+    (1, "S"): (2, "", 0),
+    (2, "L"): (-1, "", 0),
+    (2, "S"): (3, "D", 0),
+    (3, "L"): (4, "", 0),
+    (3, "S"): (-1, "", 0),
+    (4, "L"): (6, "S", 0),
+    (4, "S"): (5, "", 0),
+    (5, "L"): (-1, "", 0),
+    (5, "S"): (6, "D", 0),
+    (6, "L"): (7, "", 0),
+    (6, "S"): (-1, "", 0),
+    (7, "L"): (9, "S", 0),
+    (7, "S"): (8, "", 0),
+    (8, "L"): (-1, "", 0),
+    (8, "S"): (9, "D", 0),
+    (9, "L"): (10, "", 0),
+    (9, "S"): (-1, "", 0),
+    (10, "L"): (12, "S", 0),
+    (10, "S"): (11, "", 0),
+    (11, "L"): (-1, "", 0),
+    (11, "S"): (12, "D", 0),
+    (12, "L"): (13, "", 0),
+    (12, "S"): (-1, "", 0),
+    (13, "L"): (15, "S", 0),
+    (13, "S"): (14, "", 0),
+    (14, "L"): (-1, "", 0),
+    (14, "S"): (15, "D", 0),
+    (15, "L"): (16, "", 0),
+    (15, "S"): (-1, "", 0),
+    (16, "L"): (0, "S", 0),
+    (16, "S"): (0, "T", 0),
+}
+
+DACTYLIC_PENTAMETER: ScansionRules = {
+    (0, "L"): (1, "", 0),
+    (0, "S"): (-1, "", 0),
+    (1, "L"): (3, "S", 0),
+    (1, "S"): (2, "", 0),
+    (2, "L"): (-1, "", 0),
+    (2, "S"): (3, "D", 0),
+    (3, "L"): (4, "", 0),
+    (3, "S"): (-1, "", 0),
+    (4, "L"): (6, "S", 0),
+    (4, "S"): (5, "", 0),
+    (5, "L"): (-1, "", 0),
+    (5, "S"): (6, "D", 0),
+    (6, "L"): (7, "-", 0),
+    (6, "S"): (-1, "", 0),
+    (7, "L"): (8, "", 0),
+    (7, "S"): (-1, "", 0),
+    (8, "L"): (-1, "", 0),
+    (8, "S"): (9, "", 0),
+    (9, "L"): (-1, "", 0),
+    (9, "S"): (10, "D", 0),
+    (10, "L"): (11, "", 0),
+    (10, "S"): (-1, "", 0),
+    (11, "L"): (-1, "", 0),
+    (11, "S"): (12, "", 0),
+    (12, "L"): (-1, "", 0),
+    (12, "S"): (13, "D", 0),
+    (13, "L"): (0, "-", 0),
+    (13, "S"): (0, "-", 0),
+}
+
+HENDECASYLLABLE: ScansionRules = {
+    (0, "L"): (1, "-", 0),
+    (0, "S"): (1, "u", 0),
+    (1, "L"): (2, "-", 0),
+    (1, "S"): (2, "u", 0),
+    (2, "L"): (3, "-", 0),
+    (2, "S"): (-1, "", 0),
+    (3, "L"): (-1, "", 0),
+    (3, "S"): (4, "u", 0),
+    (4, "L"): (-1, "", 0),
+    (4, "S"): (5, "u", 0),
+    (5, "L"): (6, "-", 0),
+    (5, "S"): (-1, "", 0),
+    (6, "L"): (-1, "", 0),
+    (6, "S"): (7, "u", 0),
+    (7, "L"): (8, "-", 0),
+    (7, "S"): (-1, "", 0),
+    (8, "L"): (-1, "", 0),
+    (8, "S"): (9, "u", 0),
+    (9, "L"): (10, "-", 0),
+    (9, "S"): (-1, "", 0),
+    (10, "L"): (0, "-", 0),
+    (10, "S"): (0, "u", 0),
+}
+
+IAMBIC_TRIMETER: ScansionRules = {
+    (0, "L"): (3, "-", 0),
+    (0, "S"): (1, "u", 0),
+    (1, "L"): (5, "-|", 0),
+    (1, "S"): (2, "u", 0),
+    (2, "L"): (5, "-|", 0),
+    (2, "S"): (5, "u|", 0),
+    (3, "L"): (5, "-|", 0),
+    (3, "S"): (4, "u", 0),
+    (4, "L"): (-1, "", 0),
+    (4, "S"): (5, "u|", 0),
+    (5, "L"): (-1, "", 0),
+    (5, "S"): (6, "u", 0),
+    (6, "L"): (7, "-|", 0),
+    (6, "S"): (21, "u", 1),
+    (21, "L"): (-1, "", 0),
+    (21, "S"): (7, "u|", 0),
+    (7, "L"): (10, "-", 0),
+    (7, "S"): (8, "u", 0),
+    (8, "L"): (12, "-|", 0),
+    (8, "S"): (9, "u", 0),
+    (9, "L"): (12, "-|", 0),
+    (9, "S"): (12, "u|", 0),
+    (10, "L"): (12, "-|", 0),
+    (10, "S"): (11, "u", 0),
+    (11, "L"): (-1, "", 0),
+    (11, "S"): (12, "u|", 0),
+    (12, "L"): (-1, "", 0),
+    (12, "S"): (13, "u", 0),
+    (13, "L"): (14, "-|", 0),
+    (13, "S"): (-1, "", 0),
+    (14, "L"): (17, "-", 0),
+    (14, "S"): (15, "u", 0),
+    (15, "L"): (19, "-|", 0),
+    (15, "S"): (16, "u", 0),
+    (16, "L"): (19, "-|", 0),
+    (16, "S"): (19, "u|", 0),
+    (17, "L"): (19, "-|", 0),
+    (17, "S"): (18, "u", 0),
+    (18, "L"): (-1, "", 0),
+    (18, "S"): (19, "u|", 0),
+    (19, "L"): (-1, "", 0),
+    (19, "S"): (20, "u", 0),
+    (20, "L"): (0, "-", 0),
+    (20, "S"): (0, "u", 0),
+}
+
+IAMBIC_DIMETER: ScansionRules = {
+    (0, "L"): (3, "-", 0),
+    (0, "S"): (1, "u", 0),
+    (1, "L"): (5, "-|", 0),
+    (1, "S"): (2, "u", 0),
+    (2, "L"): (5, "-|", 0),
+    (2, "S"): (5, "u|", 0),
+    (3, "L"): (5, "-|", 0),
+    (3, "S"): (4, "u", 0),
+    (4, "L"): (-1, "", 0),
+    (4, "S"): (5, "u|", 0),
+    (5, "L"): (-1, "", 0),
+    (5, "S"): (6, "u", 0),
+    (6, "L"): (7, "-|", 0),
+    (6, "S"): (14, "u", 1),
+    (14, "L"): (-1, "", 0),
+    (14, "S"): (7, "u|", 0),
+    (7, "L"): (10, "-", 0),
+    (7, "S"): (8, "u", 0),
+    (8, "L"): (12, "-|", 0),
+    (8, "S"): (9, "u", 0),
+    (9, "L"): (12, "-|", 0),
+    (9, "S"): (12, "u|", 0),
+    (10, "L"): (12, "-|", 0),
+    (10, "S"): (11, "u", 0),
+    (11, "L"): (-1, "", 0),
+    (11, "S"): (12, "u|", 0),
+    (12, "L"): (-1, "", 0),
+    (12, "S"): (13, "u", 0),
+    (13, "L"): (0, "-", 0),
+    (13, "S"): (0, "u", 0),
+}
+
+SCANSIONS: List[Tuple[str, List[ScansionRules]]] = [
+    ("prose (no scansion)", []),
+    ("dactylic hexameters", [DACTYLICH_EXAMETER]),
+    ("elegiac distichs", [DACTYLICH_EXAMETER, DACTYLIC_PENTAMETER]),
+    ("hendecasyllables", [HENDECASYLLABLE]),
+    (
+        "iambic trimeter + dimeter",
+        [IAMBIC_TRIMETER, IAMBIC_DIMETER],
+    ),
+]
 
 USE_DB = True
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -91,13 +278,13 @@ def clean_lemma(lemma):
 
 
 class Wordlist:
-    def __init__(self):
-        self.unknownwords = set()  # Unknown to Morpheus
-        self.formtolemmas = defaultdict(list)
-        self.formtoaccenteds = defaultdict(list)
-        self.formtotaglemmaaccents = defaultdict(list)
+    def __init__(self, db_conn: sqlite3.Connection):
+        self.unknownwords: set[str] = set()  # Unknown to Morpheus
+        self.formtolemmas: defaultdict[str, list] = defaultdict(list)
+        self.formtoaccenteds: defaultdict[str, list] = defaultdict(list)
+        self.formtotaglemmaaccents: defaultdict[str, list] = defaultdict(list)
         if USE_DB:
-            self.dbconn = sqlite3.connect(DB_NAME)
+            self.dbconn = db_conn
             self.dbcursor = self.dbconn.cursor()
         else:
             self.loadwordsfromfile(MACRONS_FILE)
@@ -310,6 +497,14 @@ prefixeswithshortj = (
 )
 
 
+class WordResult(TypedDict):
+    word: str
+    is_word: bool
+    macronized: str
+    uncertainty_mask: int
+    candidates: list[str]
+
+
 class Token:
     def __init__(self, text):
         self.tag = ""
@@ -347,11 +542,12 @@ class Token:
 
     # enddef
 
-    def macronize(self, domacronize, alsomaius, performutov, performitoj):
+    def get_macronized(
+        self, domacronize: bool, alsomaius: bool, performutov: bool, performitoj: bool
+    ) -> str:
         plain = self.text
         if not self.isword:
-            self.macronized = plain
-            return
+            return plain
         accented = self.accented[0]
         accented = accented.replace("_^", "").replace("^", "")
         while "__" in accented:
@@ -366,23 +562,19 @@ class Token:
             and not performutov
             and not performitoj
         ):
-            self.macronized = plain
-            return
+            return plain
         # Enclitic tokens are not macronized (except "ue" when converting u→v)
         if self.isenclitic and not (plain.lower() == "ue" and performutov):
-            self.macronized = plain
-            return
+            return plain
         # If the only difference is underscores, we can return quickly
         if plain == accented.replace("_", ""):
-            self.macronized = accented if domacronize else plain
-            return
+            return accented if domacronize else plain
         # Skeleton check: compare after removing underscores and normalizing to UI orthography + ASCII
         s_plain = touiorthography(toascii(plain)).lower()
         s_acc = touiorthography(toascii(accented.replace("_", ""))).lower()
         if s_plain != s_acc:
             # Not the same word skeleton; avoid forcing a dubious alignment
-            self.macronized = plain
-            return
+            return plain
 
         def inscost(a):
             return 0 if a == "_" else 2
@@ -458,7 +650,74 @@ class Token:
             result = plain[i] + result
         # Some strange morpheus output (e.g. de_e_recti_) may give an additional _ in the result:
         result = result.replace("__", "_")
-        self.macronized = result
+        return result
+
+    def macronize(self, domacronize, alsomaius, performutov, performitoj) -> None:
+        self.macronized = self.get_macronized(
+            domacronize, alsomaius, performutov, performitoj
+        )
+
+    def get_structured_output(self, macronized: str) -> WordResult:
+        """
+        Reads the token's state and generates a structured dictionary.
+        """
+
+        if not self.isword:
+            return {
+                "word": self.text,
+                "is_word": self.isword,
+                "macronized": macronized,
+                "uncertainty_mask": 0,
+                "candidates": [],
+            }
+
+        final_macronized_text = postags.unicodeaccents(macronized)
+
+        if self.isunknown:
+            word_len = len(final_macronized_text)
+            return {
+                "word": self.text,
+                "is_word": self.isword,
+                "macronized": macronized,
+                "uncertainty_mask": (1 << word_len) - 1 if word_len > 0 else 0,
+                "candidates": [],
+            }
+
+        uncertainty_mask = 0
+        unique_candidates = list(
+            dict.fromkeys(
+                postags.unicodeaccents(c.replace("^", "")) for c in self.accented
+            )
+        )
+        # Only enter if there is a real, mappable ambiguity to calculate.
+        if len(unique_candidates) > 1:
+            best_guess_unicode = unique_candidates[0]
+            base_skeleton = postags.removemacrons(best_guess_unicode)
+            comparable_candidates = [
+                cand
+                for cand in unique_candidates
+                if postags.removemacrons(cand) == base_skeleton
+            ]
+            # The core logic: only calculate a non-zero mask if there is more
+            # than one candidate with the *exact same word skeleton*.
+            if len(comparable_candidates) > 1:
+                for char_index, char in enumerate(base_skeleton):
+                    # Only check for ambiguity on vowels.
+                    if char.lower() in "aeiouy":
+                        # Collect all vowel states (e.g., {'i', 'ī'}) from candidates at this specific character index.
+                        macron_states_for_vowel = {
+                            cand[char_index] for cand in comparable_candidates
+                        }
+                        if len(macron_states_for_vowel) > 1:
+                            uncertainty_mask |= 1 << char_index
+
+        return {
+            "word": self.text,
+            "is_word": True,
+            "macronized": final_macronized_text,
+            "uncertainty_mask": uncertainty_mask,
+            "candidates": unique_candidates[1:],
+        }
 
 
 class Tokenization:
@@ -1152,198 +1411,33 @@ class Tokenization:
                     result.append(token.macronized)
         return "".join(result)
 
-    # enddef
-
-
-# endclass
+    def get_structured_output(
+        self, domacronize: bool, alsomaius: bool, performutov: bool, performitoj: bool
+    ) -> list[WordResult]:
+        """
+        Generates a list of structured data for each token
+        """
+        result = []
+        for token in self.tokens:
+            macr = token.get_macronized(
+                domacronize, alsomaius, performutov, performitoj
+            )
+            result.append(token.get_structured_output(macr))
+        return result
 
 
 class Macronizer:
-
-    ScansionRules = dict[tuple[int, str], tuple[int, str, int]]
-
-    dactylichexameter: ScansionRules = {
-        (0, "L"): (1, "", 0),
-        (0, "S"): (-1, "", 0),
-        (1, "L"): (3, "S", 0),
-        (1, "S"): (2, "", 0),
-        (2, "L"): (-1, "", 0),
-        (2, "S"): (3, "D", 0),
-        (3, "L"): (4, "", 0),
-        (3, "S"): (-1, "", 0),
-        (4, "L"): (6, "S", 0),
-        (4, "S"): (5, "", 0),
-        (5, "L"): (-1, "", 0),
-        (5, "S"): (6, "D", 0),
-        (6, "L"): (7, "", 0),
-        (6, "S"): (-1, "", 0),
-        (7, "L"): (9, "S", 0),
-        (7, "S"): (8, "", 0),
-        (8, "L"): (-1, "", 0),
-        (8, "S"): (9, "D", 0),
-        (9, "L"): (10, "", 0),
-        (9, "S"): (-1, "", 0),
-        (10, "L"): (12, "S", 0),
-        (10, "S"): (11, "", 0),
-        (11, "L"): (-1, "", 0),
-        (11, "S"): (12, "D", 0),
-        (12, "L"): (13, "", 0),
-        (12, "S"): (-1, "", 0),
-        (13, "L"): (15, "S", 0),
-        (13, "S"): (14, "", 0),
-        (14, "L"): (-1, "", 0),
-        (14, "S"): (15, "D", 0),
-        (15, "L"): (16, "", 0),
-        (15, "S"): (-1, "", 0),
-        (16, "L"): (0, "S", 0),
-        (16, "S"): (0, "T", 0),
-    }
-
-    dactylicpentameter: ScansionRules = {
-        (0, "L"): (1, "", 0),
-        (0, "S"): (-1, "", 0),
-        (1, "L"): (3, "S", 0),
-        (1, "S"): (2, "", 0),
-        (2, "L"): (-1, "", 0),
-        (2, "S"): (3, "D", 0),
-        (3, "L"): (4, "", 0),
-        (3, "S"): (-1, "", 0),
-        (4, "L"): (6, "S", 0),
-        (4, "S"): (5, "", 0),
-        (5, "L"): (-1, "", 0),
-        (5, "S"): (6, "D", 0),
-        (6, "L"): (7, "-", 0),
-        (6, "S"): (-1, "", 0),
-        (7, "L"): (8, "", 0),
-        (7, "S"): (-1, "", 0),
-        (8, "L"): (-1, "", 0),
-        (8, "S"): (9, "", 0),
-        (9, "L"): (-1, "", 0),
-        (9, "S"): (10, "D", 0),
-        (10, "L"): (11, "", 0),
-        (10, "S"): (-1, "", 0),
-        (11, "L"): (-1, "", 0),
-        (11, "S"): (12, "", 0),
-        (12, "L"): (-1, "", 0),
-        (12, "S"): (13, "D", 0),
-        (13, "L"): (0, "-", 0),
-        (13, "S"): (0, "-", 0),
-    }
-
-    hendecasyllable: ScansionRules = {
-        (0, "L"): (1, "-", 0),
-        (0, "S"): (1, "u", 0),
-        (1, "L"): (2, "-", 0),
-        (1, "S"): (2, "u", 0),
-        (2, "L"): (3, "-", 0),
-        (2, "S"): (-1, "", 0),
-        (3, "L"): (-1, "", 0),
-        (3, "S"): (4, "u", 0),
-        (4, "L"): (-1, "", 0),
-        (4, "S"): (5, "u", 0),
-        (5, "L"): (6, "-", 0),
-        (5, "S"): (-1, "", 0),
-        (6, "L"): (-1, "", 0),
-        (6, "S"): (7, "u", 0),
-        (7, "L"): (8, "-", 0),
-        (7, "S"): (-1, "", 0),
-        (8, "L"): (-1, "", 0),
-        (8, "S"): (9, "u", 0),
-        (9, "L"): (10, "-", 0),
-        (9, "S"): (-1, "", 0),
-        (10, "L"): (0, "-", 0),
-        (10, "S"): (0, "u", 0),
-    }
-
-    iambictrimeter: ScansionRules = {
-        (0, "L"): (3, "-", 0),
-        (0, "S"): (1, "u", 0),
-        (1, "L"): (5, "-|", 0),
-        (1, "S"): (2, "u", 0),
-        (2, "L"): (5, "-|", 0),
-        (2, "S"): (5, "u|", 0),
-        (3, "L"): (5, "-|", 0),
-        (3, "S"): (4, "u", 0),
-        (4, "L"): (-1, "", 0),
-        (4, "S"): (5, "u|", 0),
-        (5, "L"): (-1, "", 0),
-        (5, "S"): (6, "u", 0),
-        (6, "L"): (7, "-|", 0),
-        (6, "S"): (21, "u", 1),
-        (21, "L"): (-1, "", 0),
-        (21, "S"): (7, "u|", 0),
-        (7, "L"): (10, "-", 0),
-        (7, "S"): (8, "u", 0),
-        (8, "L"): (12, "-|", 0),
-        (8, "S"): (9, "u", 0),
-        (9, "L"): (12, "-|", 0),
-        (9, "S"): (12, "u|", 0),
-        (10, "L"): (12, "-|", 0),
-        (10, "S"): (11, "u", 0),
-        (11, "L"): (-1, "", 0),
-        (11, "S"): (12, "u|", 0),
-        (12, "L"): (-1, "", 0),
-        (12, "S"): (13, "u", 0),
-        (13, "L"): (14, "-|", 0),
-        (13, "S"): (-1, "", 0),
-        (14, "L"): (17, "-", 0),
-        (14, "S"): (15, "u", 0),
-        (15, "L"): (19, "-|", 0),
-        (15, "S"): (16, "u", 0),
-        (16, "L"): (19, "-|", 0),
-        (16, "S"): (19, "u|", 0),
-        (17, "L"): (19, "-|", 0),
-        (17, "S"): (18, "u", 0),
-        (18, "L"): (-1, "", 0),
-        (18, "S"): (19, "u|", 0),
-        (19, "L"): (-1, "", 0),
-        (19, "S"): (20, "u", 0),
-        (20, "L"): (0, "-", 0),
-        (20, "S"): (0, "u", 0),
-    }
-
-    iambicdimeter: ScansionRules = {
-        (0, "L"): (3, "-", 0),
-        (0, "S"): (1, "u", 0),
-        (1, "L"): (5, "-|", 0),
-        (1, "S"): (2, "u", 0),
-        (2, "L"): (5, "-|", 0),
-        (2, "S"): (5, "u|", 0),
-        (3, "L"): (5, "-|", 0),
-        (3, "S"): (4, "u", 0),
-        (4, "L"): (-1, "", 0),
-        (4, "S"): (5, "u|", 0),
-        (5, "L"): (-1, "", 0),
-        (5, "S"): (6, "u", 0),
-        (6, "L"): (7, "-|", 0),
-        (6, "S"): (14, "u", 1),
-        (14, "L"): (-1, "", 0),
-        (14, "S"): (7, "u|", 0),
-        (7, "L"): (10, "-", 0),
-        (7, "S"): (8, "u", 0),
-        (8, "L"): (12, "-|", 0),
-        (8, "S"): (9, "u", 0),
-        (9, "L"): (12, "-|", 0),
-        (9, "S"): (12, "u|", 0),
-        (10, "L"): (12, "-|", 0),
-        (10, "S"): (11, "u", 0),
-        (11, "L"): (-1, "", 0),
-        (11, "S"): (12, "u|", 0),
-        (12, "L"): (-1, "", 0),
-        (12, "S"): (13, "u", 0),
-        (13, "L"): (0, "-", 0),
-        (13, "S"): (0, "u", 0),
-    }
-
-    def __init__(self, config_path: str = os.path.join(SCRIPT_DIR, "config.ini")):
+    def __init__(
+        self,
+        db_conn: sqlite3.Connection,
+        config_path: str = os.path.join(SCRIPT_DIR, "config.ini"),
+    ):
         config = configparser.ConfigParser()
         config.read(config_path)
         self.rftagger_dir = config.get("paths", "rftagger_dir", fallback="")
 
-        self.wordlist = Wordlist()
+        self.wordlist = Wordlist(db_conn)
         self.tokenization = Tokenization("")
-
-    # enddef
 
     def settext(self, text):
         self.tokenization = Tokenization(text)

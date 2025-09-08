@@ -1,21 +1,34 @@
-# Ignore the git repository history
+# Repository history
 .git
 
-# Ignore Docker-related files
+# Docker-related files
 Dockerfile
 .dockerignore
+Dockerfile.*
 
-# Ignore IDE/editor configuration
+# IDE/editor configuration
 .vscode/
 .idea/
 
-# Ignore Python virtual environments
+# Local virtual environments and caches
+.venv/
 venv/
 *.pyc
 __pycache__/
+.mypy_cache/
+.pytest_cache
 
 # Ignore files generated when bulding the dev image
 macronizer.db
 rftagger-ldt.model
 lemmas.py
 macronized_endings.py
+rftagger-lexicon.txt
+rftagger-ldt.model
+ldt-corpus.txt
+
+# Installation files
+RFTagger/
+treebank_data/
+RFTagger.zip
+morpheus/
