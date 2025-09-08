@@ -12,19 +12,24 @@ The primary `Dockerfile` in this repository creates a **"Golden Base"** image. T
 ### 2. Easily Create Portable Application Images
 From the "Golden Base" image, you can easily create any number of self-contained, **Final Application Images**.
 *   **No Extra System Dependencies:** The only thing you need to provide is the **treebank data**.
-*   **The Result is a Portable Application:** The output of the training process is a final, locked-down image containing all trained models and the database. **This image is a single artifact that can be easily saved, shared, and run on any machine with Docker.** You can create different versions of the application (e.g., one trained on classical texts, another on medieval texts) simply by using different treebank data. *Note: The `train-rftagger.sh` script is tailored for the data format found in the treebank_data/v1.6 repository.*
+*   **The Result is a Portable Application:** The output of the training process is a final, locked-down image containing all trained models and the database. **This image is a single artifact that can be easily saved, shared, and run on any machine with Docker.** You can create different versions of the application (e.g., one trained on classical texts, another on medieval texts) simply by using different treebank data. These can easily be debugged.
 
-### 3. A Clear Path for Debugging Final Images
-It provides a straightforward workflow to **debug the Python code** running inside a final, trained application image. By attaching a code editor like VS Code to the running container, you can set breakpoints, inspect variables, and step through the code live.
+*Note: The `train-rftagger.sh` script is tailored for the data format found in the treebank_data/v1.6 repository.*
+
+### 3. A Clear Path for Deployment
+Once you have a trained image, a secondary workflow allows you to package it into a clean, production-ready **web API server**. This provides a clear separation between the training environment and the final deployed application.
+
+---
 
 All original installation instructions in `INSTALL.txt` can be disregarded in favor of the workflow described below.
 
 ## The Workflow in a Nutshell
 
-The core idea is to separate the slow, complex build process from the fast, iterative training process.
+The core idea is to separate the slow, complex build process from the fast, iterative training and runnable application creation process.
 
-1.  **Golden Base Image (`whothefluff/latin-macronizer:dev-env-v1`)**: A stable, locked image that contains all the compiled tools (Morpheus, RFTagger) but has **not** been trained. You build this once and reuse it many times.
-2.  **Final Application Image (e.g., `whothefluff/latin-macronizer:dev-env-v1-alatius-treebank-v1`)**: A final, runnable image created from the Golden Base. This image **includes** the trained models and database, making it a self-contained, distributable application.
+1.  **Golden Base Image (`whothefluff/latin-macronizer:dev-env-v2`)**: A stable, locked image that contains all the compiled tools (Morpheus, RFTagger) but has **not** been trained. You build this once and reuse it many times.
+2.  **Trained Image (`...:dev-env-v2-alatius-treebank-v1`)**: A final, runnable image created from the Golden Base. This image **includes** the trained models and database, making it a self-contained, command-line-runnable application.
+3.  **API Server Image (`...:dev-env-v2-alatius-treebank-v1-api`)**: A final, production-ready image built from a *Trained Image*. Its sole purpose is to serve the model via a web API.
 
 ### Step 1: Prerequisites
 
@@ -40,10 +45,10 @@ This step compiles all the tools. You only need to do this once, or whenever you
 
     ```bash
     # This command builds the image and tags it with your desired name
-    docker build -t whothefluff/latin-macronizer:dev-env-v1 .
+    docker build -t whothefluff/latin-macronizer:dev-env-v2 .
     ```
 
-You now have a stable `whothefluff/latin-macronizer:dev-env-v1` image ready for the training process.
+You now have a stable `whothefluff/latin-macronizer:dev-env-v2` image ready for the training process.
 
 ### Step 3: Train and Create a Final Application Image
 
@@ -52,7 +57,7 @@ This is the interactive workflow you will use every time you want to train the m
 1.  **Start a temporary container** from your Golden Base image. We give it a name so we can easily save its state later.
 
     ```bash
-    docker run -it --name latin-training-session whothefluff/latin-macronizer:dev-env-v1
+    docker run -it --name latin-training-session whothefluff/latin-macronizer:dev-env-v2
     ```
 
     You are now inside the container's shell as the `appuser`, at the `/app` prompt.
@@ -74,15 +79,18 @@ This is the interactive workflow you will use every time you want to train the m
     # 4. (Optional but recommended) Run the test to confirm it works
     python macronize.py --test
     # You should see the success message: "Ō orbis terrārum tē salūtō!"
+
+    # 5. Clean up the training data to reduce final image size
+    rm -rf treebank_data
     ```
 
 3.  **Exit the container** by typing `exit` or pressing `Ctrl+D`.
 
-4.  **Save the trained state** by committing the container. This creates your new, self-contained application image. For this example, we'll tag it as `dev-env-v1-alatius-treebank-v1`.
+4.  **Save the trained state** by committing the container. This creates your new, self-contained application image.
 
     ```bash
     # Syntax: docker commit <container_name> <new_image_name:tag>
-    docker commit latin-training-session whothefluff/latin-macronizer:dev-env-v1-alatius-treebank-v1
+    docker commit latin-training-session whothefluff/latin-macronizer:dev-env-v2-alatius-treebank-v1
     ```
 
 5.  **Clean up** by removing the temporary container, which is no longer needed.
@@ -91,26 +99,42 @@ This is the interactive workflow you will use every time you want to train the m
     docker rm latin-training-session
     ```
 
-You have now created a final, distributable image named `whothefluff/latin-macronizer:dev-env-v1-alatius-treebank-v1` containing the fully configured and trained application.
+You have now created a final, distributable image named `whothefluff/latin-macronizer:dev-env-v2-alatius-treebank-v1` containing the fully configured and trained CLI application.
 
-## How to Use Your Trained Image
+### Step 4 (Optional): Creating a Standalone API Server
 
-You can now use your final image to run the macronizer from any terminal, without needing to enter the container interactively.
+Once you have a final, trained image (from Step 3), you can easily package it into a self-contained, runnable web API. This workflow uses a second Dockerfile to add the API layer without polluting the original training environment.
+
+#### Build the API Image
+
+Using your result from Step 3 as value for the argument TRAINED_IMAGE_TAG, you can now create the API image
+
+```bash
+docker build \
+  --build-arg TRAINED_IMAGE_TAG="whothefluff/latin-macronizer:dev-env-v2-alatius-treebank-v1" \
+  -f Dockerfile.api \
+  -t "whothefluff/latin-macronizer:dev-env-v2-alatius-treebank-v1-api" \
+  .
+```
+
+## How to Use Your Trained Image (Command Line)
+
+You can now use your trained image to run the macronizer from any terminal, without needing to enter the container interactively.
 
 *   To run the built-in test:
 
     ```bash
-    docker run --rm whothefluff/latin-macronizer:dev-env-v1-alatius-treebank-v1 python macronize.py --test
+    docker run --rm whothefluff/latin-macronizer:dev-env-v2-alatius-treebank-v1 python macronize.py --test
     ```
 
 *   To macronize a string:
 
     ```bash
-    echo "puer in via ambulat" | docker run -i --rm whothefluff/latin-macronizer:dev-env-v1-alatius-treebank-v1 python macronize.py
+    echo "puer in via ambulat" | docker run -i --rm whothefluff/latin-macronizer:dev-env-v2-alatius-treebank-v1 python macronize.py
     ```
     Output:
     ```
-    Puer in viā ambulat.
+    puer in viā ambulat
     ```
 
 ## Naming and Versioning Your Images
@@ -125,7 +149,7 @@ This allows you to maintain multiple, distinct, trained versions of the applicat
 
 ## Debugging with VS Code
 
-Debugging this application requires a hybrid approach. We use a volume mount to link your local source code, but first, we must copy all the essential **trained files and generated modules** from your final image into your local project directory.
+Debugging the CLI application requires a hybrid approach. We use a volume mount to link your local source code, but first, we must copy all the essential **trained files and generated modules** from your final image into your local project directory.
 
 This process has a **one-time setup** per trained image, after which you can debug repeatably without further errors.
 
@@ -197,3 +221,23 @@ You can now use `docker run` with a volume mount. Because your local folder cont
 
 2.  **Attach VS Code:**
     Once the command is running and waiting, go to the **Run and Debug** view in VS Code, select **"Python: Attach to Docker Container"**, and click the green play button. Execution will now stop at your breakpoints.
+
+## How to Use Your Trained Image (API Server)
+
+1.  **Run the container:**
+    This command starts your API server in the background and maps port `8001` on your local machine to port `8000` inside the container.
+
+    ```bash
+    docker run -d --rm --name macronizer-api -p 8001:8000 whothefluff/latin-macronizer:dev-env-v2-alatius-treebank-v1-api
+    ```
+
+2.  **Test the endpoint:**
+    Use `curl` or any API client to send a request to your running server.
+
+    ```bash
+    curl -X POST "http://localhost:8001/macronize-text" \
+      -H "Content-Type: application/json" \
+      -d '{"text": "arma virumque cano"}'
+    ```
+
+You now have a portable, versioned API artifact that can be deployed anywhere.
