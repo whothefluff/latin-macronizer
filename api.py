@@ -1,3 +1,4 @@
+import logging
 import sqlite3
 import string
 import unicodedata
@@ -38,17 +39,17 @@ class MacronizationResponse(BaseModel):
 async def macronizer_manager(a: FastAPI) -> AsyncGenerator[Any, Any]:
     """Manages the Macronizer instance and its DB connection for the app's life."""
 
+    logging.info("Initializing Macronizer and shared DB connection.")
     db_connection = sqlite3.connect(DB_PATH)
     macronizer_instance = Macronizer(db_connection)
     a.state.macronizer = macronizer_instance
-    print("Macronizer initialized with shared DB connection.")
 
     # Run app
     yield
 
     # On application shutdown
+    logging.info("Closing shared DB connection.")
     db_connection.close()
-    print("Shared DB connection closed.")
 
 
 app = FastAPI(
@@ -66,16 +67,21 @@ async def macronize_text(request: MacronizationRequest) -> MacronizationResponse
 
     try:
 
+        logging.debug("Initializing")
         macronizer: Macronizer = app.state.macronizer
 
+        logging.debug("Processing text (first 50 chars): '%s...'", request.text[:50])
         text = extract_text(request)
 
+        logging.debug("As (first 50 chars): '%s...'", text[:50])
         macronizer.settext(text)
 
         if 0 < request.scan_option < len(SCANSIONS):
-            automata = SCANSIONS[request.scan_option][1]
-            if automata:
-                macronizer.scan(automata)
+            selected_scansion = SCANSIONS[request.scan_option]
+            automatas = selected_scansion[1]
+            if automatas:
+                logging.debug("Scanning as '%s'", selected_scansion[0])
+                macronizer.scan(automatas)
 
         structured_results = macronizer.tokenization.get_structured_output(
             request.domacronize,
@@ -87,7 +93,7 @@ async def macronize_text(request: MacronizationRequest) -> MacronizationResponse
         return MacronizationResponse(results=structured_results)
 
     except Exception as e:
-
+        logging.exception("An unhandled error occurred in macronize_text")
         raise HTTPException(status_code=500, detail="An internal error occurred") from e
 
 
