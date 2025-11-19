@@ -57,7 +57,7 @@ This is the interactive workflow you will use every time you want to train the m
 1.  **Start a temporary container** from your Golden Base image. We give it a name so we can easily save its state later.
 
     ```bash
-    docker run -it --name latin-training-session whothefluff/latin-macronizer:dev-env-v2
+    docker run -it --name latin-training-session whothefluff/latin-macronizer:dev-env-v2.0.1
     ```
 
     You are now inside the container's shell as the `appuser`, at the `/app` prompt.
