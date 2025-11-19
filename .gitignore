@@ -188,3 +188,15 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 .idea/
 .vscode/
+
+lemmas.py
+macronized_endings.py
+RFTagger/
+RFTagger.zip
+treebank_data/
+morpheus/
+macronizer.db
+rftagger-ldt.model
+rftagger-lexicon.txt
+rftagger-ldt.model
+ldt-corpus.txt

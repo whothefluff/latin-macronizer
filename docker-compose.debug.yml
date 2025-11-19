@@ -3,8 +3,8 @@ services:
   app:
 
     # Use final, pre-built image (after training is complete)
-    # Example: whothefluff/latin-macronizer:dev-env-v1-alatius-treebank-v1
-    image: whothefluff/latin-macronizer:dev-env-v1-alatius-treebank-v1
+    # Example: whothefluff/latin-macronizer:dev-env-v2.0.1-alatius-treebank-v1
+    image: whothefluff/latin-macronizer:dev-env-v2.0.1-alatius-treebank-v1
 
     # Map the debug port.
     ports:

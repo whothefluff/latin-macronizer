@@ -1,8 +1,10 @@
 import os
+import re
 import sqlite3
 import subprocess
 import sys
 import types
+from collections import defaultdict
 
 import pytest
 
@@ -98,18 +100,23 @@ def functional_macronizer_fixture(monkeypatch, tmp_path):
 
     # --- Part 1: Create functional stubs ---
     def _remove_macrons(text):
-        macron_map = str.maketrans("āēīōūȳ_", "aeiouy ")
+        macron_map = str.maketrans("āēīōūȳĀĒĪŌŪȲ_", "aeiouyaeiouy ")
         return text.translate(macron_map).replace(" ", "")
 
     def _unicodeaccents(text):
-        return (
-            text.replace("a_", "ā")
-            .replace("e_", "ē")
-            .replace("i_", "ī")
-            .replace("o_", "ō")
-            .replace("u_", "ū")
-            .replace("y_", "ȳ")
-        )
+        text = re.sub("a_", "ā", text)
+        text = re.sub("e_", "ē", text)
+        text = re.sub("i_", "ī", text)
+        text = re.sub("o_", "ō", text)
+        text = re.sub("u_", "ū", text)
+        text = re.sub("y_", "ȳ", text)
+        text = re.sub("A_", "Ā", text)
+        text = re.sub("E_", "Ē", text)
+        text = re.sub("I_", "Ī", text)
+        text = re.sub("O_", "Ō", text)
+        text = re.sub("U_", "Ū", text)
+        text = re.sub("Y_", "Ȳ", text)
+        return text
 
     postags_stub = types.ModuleType("postags")
     postags_stub.removemacrons = _remove_macrons
@@ -1166,3 +1173,500 @@ class TestTokenGetStructuredOutput:
         #    unique candidates: 'prōspera' vs 'prōsperā'. The final 'a' is ambiguous.
         #    The word 'prospera' is 8 chars long, so the last char is at index 7 (2^7)
         assert result["uncertainty_mask"] == 128
+
+
+class TestCandidateCasing:
+    """
+    Tests that the `candidates` list in the structured output
+    correctly preserves the casing of the original input token.
+    """
+
+    def test_candidates_for_uppercase_input_are_recased_to_uppercase(
+        self, functional_macronizer
+    ):
+        """
+        GIVEN an all-caps token "VENIT",
+        WHEN its candidates are generated from title-cased ("VE_NIT") and
+        lowercase ("venit") lemmas,
+        THEN the final candidates list must also be all-caps.
+        """
+        # Arrange
+        token = functional_macronizer.Token("VENIT")
+        token.accented = ["ve_nit", "venit"]
+        primary_macronized_form = "VE_NIT"
+
+        # Act
+        result = token.get_structured_output(primary_macronized_form)
+
+        # Assert
+        assert result["macronized"] == "VĒNIT"
+        assert result["candidates"] == ["VENIT"]
+
+    def test_candidates_for_titlecase_input_are_recased_to_titlecase(
+        self, functional_macronizer
+    ):
+        """
+        GIVEN a title-cased token "Venit",
+        WHEN its candidates are generated, including a lowercase one,
+        THEN the final candidate must be re-cased to title-case.
+        """
+        # Arrange
+        token = functional_macronizer.Token("Venit")
+        token.accented = ["ve_nit", "venit"]
+        primary_macronized_form = "Ve_nit"
+
+        # Act
+        result = token.get_structured_output(primary_macronized_form)
+
+        # Assert
+        assert result["macronized"] == "Vēnit"
+        assert result["candidates"] == ["Venit"]
+
+    def test_candidates_for_lowercase_input_remain_lowercase_as_expected(
+        self, functional_macronizer
+    ):
+        """
+        GIVEN a lowercase token "venit" with multiple valid lowercase candidates,
+        WHEN its candidates are generated,
+        THEN the final list should correctly remain lowercase.
+        This test serves as a non-regression check for the most common use case.
+        """
+        # Arrange
+        token = functional_macronizer.Token("venit")
+        token.accented = ["ve_nit", "venit"]
+        primary_macronized_form = "ve_nit"
+
+        # Act
+        result = token.get_structured_output(primary_macronized_form)
+
+        # Assert
+        assert result["macronized"] == "vēnit"
+        assert result["candidates"] == ["venit"]
+
+
+class TestCapitalizationAndVerseLogic:
+    """
+    Tests the logic for handling capitalized words, especially at the start of verses/sentences.
+    """
+
+    # Word with both proper noun lemma and not
+    AUGUSTUS_DATA = {
+        "augustus": [
+            ("TAG", "Augustus", "Augustus_acc"),  # Proper noun (Capitalized)
+            ("TAG", "augustus", "augustus_acc"),  # lower case
+        ]
+    }
+    # Word with only not proper noun lemma
+    VERUM_DATA = {
+        "verum": [
+            ("TAG", "verum", "ve_rum"),
+        ]
+    }
+    # Word with only a proper noun lemma
+    CAESAR_DATA = {
+        "caesar": [
+            ("TAG", "Caesar", "Caesar_acc"),
+        ]
+    }
+
+    @classmethod
+    def setup_class(cls):
+        """Injects minimal fake modules with necessary attributes into sys.modules."""
+        # Check if stubs already exist from other tests, if not, create them.
+        if "postags" not in sys.modules:
+            postags = types.ModuleType("postags")
+            postags.tag_distance = lambda a, b: 0
+            postags.removemacrons = lambda s: s
+            sys.modules["postags"] = postags
+
+        if "lemmas" not in sys.modules:
+            lemmas = types.ModuleType("lemmas")
+            sys.modules["lemmas"] = lemmas
+        # Ensure the required attributes exist for the import to succeed.
+        lemmas_module = sys.modules["lemmas"]
+        if not hasattr(lemmas_module, "lemma_frequency"):
+            lemmas_module.lemma_frequency = {}
+        if not hasattr(lemmas_module, "word_lemma_freq"):
+            lemmas_module.word_lemma_freq = {}
+        if not hasattr(lemmas_module, "wordform_to_corpus_lemmas"):
+            lemmas_module.wordform_to_corpus_lemmas = {}
+
+        if "macronized_endings" not in sys.modules:
+            mac_end = types.ModuleType("macronized_endings")
+            mac_end.tag_to_endings = {}
+            sys.modules["macronized_endings"] = mac_end
+
+    @pytest.fixture(name="macronizer_verse_test_fixture")
+    def macronizer_verse_test_fixture_func(self, mocker):
+        """
+        Provides a factory to test Tokenization.getaccents, which contains the core capitalization logic.
+        """
+        from macronizer import Tokenization
+
+        mocker.patch("macronizer.Tokenization.levenshtein", return_value=0)
+
+        def _run_test(text_input: str, mock_data: dict):
+            """Factory function to run a single test case."""
+            word_to_find = list(mock_data.keys())[0]
+            mock_wordlist = mocker.MagicMock()
+            mock_wordlist.formtotaglemmaaccents = mock_data
+
+            mock_wordlist.formtoaccenteds = defaultdict(list)
+            if word_to_find in mock_data:
+                accented_forms = [p[2] for p in mock_data[word_to_find]]
+                mock_wordlist.formtoaccenteds[word_to_find] = accented_forms
+
+            tokenization = Tokenization(text_input)
+            for t in tokenization.tokens:
+                if t.isword:
+                    t.tag = "TAG"
+                    t.lemma = t.text.lower()
+
+            tokenization.getaccents(mock_wordlist)
+
+            word_token = next(
+                (t for t in tokenization.tokens if t.text.lower() == word_to_find),
+                None,
+            )
+            assert (
+                word_token is not None
+            ), f"Test setup failed: token for '{word_to_find}' not found in '{text_input}'"
+            return word_token
+
+        return _run_test
+
+    @pytest.mark.parametrize(
+        "description, text_input, db_data_key, expected_isunknown, expected_accented",
+        [
+            # === SCENARIO: Only not proper noun available ('verum') ===
+            (
+                "lower, start, only lower lemma -> macronize",
+                "verum et.",
+                "VERUM",
+                False,
+                ["ve_rum"],
+            ),
+            (
+                "lower, mid-sentence, only lower lemma -> macronize",
+                "et verum.",
+                "VERUM",
+                False,
+                ["ve_rum"],
+            ),
+            (
+                "Capitalized, start, only lower lemma -> macronize (forgiven)",
+                "Verum et.",
+                "VERUM",
+                False,
+                ["ve_rum"],
+            ),
+            (
+                "Capitalized, mid-sentence, only lower lemma -> unknown",
+                "et Verum.",
+                "VERUM",
+                True,
+                ["Verum"],
+            ),
+            (
+                "Capitalized, mid-sentence sequential, only lower lemma -> macronize (forgiven)",
+                "Et Verum.",
+                "VERUM",
+                False,
+                ["ve_rum"],
+            ),
+            (
+                "ALLCAPS, start, only lower lemma -> macronize (forgiven)",
+                "VERUM et.",
+                "VERUM",
+                False,
+                ["ve_rum"],
+            ),
+            (
+                "ALLCAPS, mid-sentence, only lower lemma -> unknown",
+                "et VERUM.",
+                "VERUM",
+                True,
+                ["VERUM"],
+            ),
+            # === SCENARIO: Only proper noun lemma available ('Caesar') ===
+            (
+                "lower, start, only proper noun -> unknown",
+                "caesar et.",
+                "CAESAR",
+                True,
+                ["caesar"],
+            ),
+            (
+                "lower, mid-sentence, only proper noun -> unknown",
+                "et caesar.",
+                "CAESAR",
+                True,
+                ["caesar"],
+            ),
+            (
+                "Capitalized, start, only proper noun -> macronize",
+                "Caesar et.",
+                "CAESAR",
+                False,
+                ["Caesar_acc"],
+            ),
+            (
+                "Capitalized, mid-sentence sequential, only proper noun -> macronize",
+                "Et Caesar.",
+                "CAESAR",
+                False,
+                ["Caesar_acc"],
+            ),
+            (
+                "Capitalized, mid-sentence, only proper noun -> macronize",
+                "et Caesar.",
+                "CAESAR",
+                False,
+                ["Caesar_acc"],
+            ),
+            (
+                "ALLCAPS, start, only proper noun -> macronize (forgiven)",
+                "CAESAR et.",
+                "CAESAR",
+                False,
+                ["Caesar_acc"],
+            ),
+            (
+                "ALLCAPS, mid-sentence, only proper noun -> unknown",
+                "et CAESAR.",
+                "CAESAR",
+                True,
+                ["CAESAR"],
+            ),
+            # === SCENARIO: Both proper noun and not available ('augustus' + 'Augustus') ===
+            (
+                "lower, start, both options -> macronize from lower only",
+                "augustus et.",
+                "AUGUSTUS",
+                False,
+                ["augustus_acc"],
+            ),
+            (
+                "lower, mid-sentence, both options -> macronize from lower",
+                "et augustus.",
+                "AUGUSTUS",
+                False,
+                ["augustus_acc"],
+            ),
+            (
+                "Capitalized, start, both options -> consider both",
+                "Augustus et.",
+                "AUGUSTUS",
+                False,
+                ["Augustus_acc", "augustus_acc"],
+            ),
+            (
+                "Capitalized, start (newline), both options -> consider both",
+                "finis\nAugustus",
+                "AUGUSTUS",
+                False,
+                ["Augustus_acc", "augustus_acc"],
+            ),
+            (
+                "Capitalized, start (punct), both options -> consider both",
+                "finis. Augustus",
+                "AUGUSTUS",
+                False,
+                ["Augustus_acc", "augustus_acc"],
+            ),
+            (
+                "Capitalized, mid-sentence, both options -> macronize from Title only",
+                "et Augustus.",
+                "AUGUSTUS",
+                False,
+                ["Augustus_acc"],
+            ),
+            (
+                "Capitalized, mid-sentence sequential, both options -> consider both",
+                "Divus Augustus.",
+                "AUGUSTUS",
+                False,
+                ["Augustus_acc", "augustus_acc"],
+            ),
+            (
+                "ALLCAPS, start, both options -> consider both",
+                "AUGUSTUS et.",
+                "AUGUSTUS",
+                False,
+                ["Augustus_acc", "augustus_acc"],
+            ),
+            (
+                "ALLCAPS, mid-sentence, both options -> unknown",
+                "et AUGUSTUS.",
+                "AUGUSTUS",
+                True,
+                ["AUGUSTUS"],
+            ),
+        ],
+    )
+    def test_capitalization_logic(
+        self,
+        macronizer_verse_test_fixture,
+        description,
+        text_input,
+        db_data_key,
+        expected_isunknown,
+        expected_accented,
+    ):
+        """
+        Tests the complete matrix of capitalization, word position, and lemma availability.
+        """
+        db_data_map = {
+            "VERUM": self.VERUM_DATA,
+            "CAESAR": self.CAESAR_DATA,
+            "AUGUSTUS": self.AUGUSTUS_DATA,
+        }
+        db_data = db_data_map[db_data_key]
+
+        token = macronizer_verse_test_fixture(text_input, db_data)
+
+        assert (
+            token.isunknown == expected_isunknown
+        ), f"Failed isunknown check for: {description}"
+
+        # For cases where we expect both proper and common noun lemmas, we must
+        # assert the correct order, not just the content.
+        if db_data_key == "AUGUSTUS" and len(expected_accented) > 1:
+            # The proper noun 'Augustus_acc' must be the primary suggestion.
+            assert (
+                token.accented[0] == "Augustus_acc"
+            ), f"Failed primary candidate check for: {description}"
+            # Verify the set of all candidates is correct.
+            assert set(token.accented) == set(
+                expected_accented
+            ), f"Failed full candidate set check for: {description}"
+        else:
+            # For all other cases, an order-agnostic check is sufficient.
+            assert sorted(token.accented) == sorted(
+                expected_accented
+            ), f"Failed accented check for: {description}"
+
+    def test_all_caps_sequence_is_macronized(self, mocker):
+        """
+        Verifies that a sequence of ALL CAPS words is treated as a stylistic choice,
+        and that the proper noun preference is correctly applied.
+        """
+        from macronizer import Tokenization
+
+        # Arrange
+        text_input = "DIVUS IULIUS CAESAR"
+        # 'iulius' has both lemma types, making it the critical test case.
+        mock_data = {
+            "divus": [("TAG", "divus", "di_vus_acc")],
+            "iulius": [
+                ("TAG", "Iulius", "Iulius_acc"),
+                ("TAG", "iulius", "iulius_acc"),
+            ],
+            "caesar": [("TAG", "Caesar", "Caesar_acc")],
+        }
+
+        mock_wordlist = mocker.MagicMock()
+        mock_wordlist.formtotaglemmaaccents = mock_data
+
+        # Act
+        tokenization = Tokenization(text_input)
+        for t in tokenization.tokens:
+            if t.isword:
+                t.tag = "TAG"
+                t.lemma = t.text.lower()
+        tokenization.getaccents(mock_wordlist)
+
+        # Assert
+        divus_token = next(t for t in tokenization.tokens if t.text == "DIVUS")
+        iulius_token = next(t for t in tokenization.tokens if t.text == "IULIUS")
+        caesar_token = next(t for t in tokenization.tokens if t.text == "CAESAR")
+        # The first word is forgiven because it's at the start.
+        assert not divus_token.isunknown and divus_token.accented == ["di_vus_acc"]
+        # The proper noun lemma is preferred (ranked first),
+        # but the common noun is still included as a valid candidate.
+        assert not iulius_token.isunknown
+        assert iulius_token.accented[0] == "Iulius_acc"
+        assert set(iulius_token.accented) == {"Iulius_acc", "iulius_acc"}
+        # The forgiveness and preference logic continues for the third word.
+        assert not caesar_token.isunknown and caesar_token.accented == ["Caesar_acc"]
+
+    def test_title_case_sequence_is_macronized(self, mocker):
+        """
+        Verifies that a sequence of Title Case words is treated as a stylistic choice,
+        and that the proper noun preference is correctly applied.
+        """
+        from macronizer import Tokenization
+
+        # Arrange
+        text_input = "Divus Iulius Caesar"
+        # 'iulius' has both lemma types, making it the critical test case.
+        mock_data = {
+            "divus": [("TAG", "divus", "di_vus_acc")],
+            "iulius": [
+                ("TAG", "Iulius", "Iulius_acc"),
+                ("TAG", "iulius", "iulius_acc"),
+            ],
+            "caesar": [("TAG", "Caesar", "Caesar_acc")],
+        }
+
+        mock_wordlist = mocker.MagicMock()
+        mock_wordlist.formtotaglemmaaccents = mock_data
+
+        # Act
+        tokenization = Tokenization(text_input)
+        for t in tokenization.tokens:
+            if t.isword:
+                t.tag = "TAG"
+                t.lemma = t.text.lower()
+        tokenization.getaccents(mock_wordlist)
+
+        # Assert
+        divus_token = next(t for t in tokenization.tokens if t.text == "Divus")
+        iulius_token = next(t for t in tokenization.tokens if t.text == "Iulius")
+        caesar_token = next(t for t in tokenization.tokens if t.text == "Caesar")
+
+        # The first word is forgiven because it's at the start.
+        assert not divus_token.isunknown and divus_token.accented == ["di_vus_acc"]
+        # The proper noun lemma is preferred (ranked first),
+        # but the common noun is still included as a valid candidate.
+        assert not iulius_token.isunknown
+        assert iulius_token.accented[0] == "Iulius_acc"
+        assert set(iulius_token.accented) == {"Iulius_acc", "iulius_acc"}
+        # The forgiveness and preference logic continues for the third word.
+        assert not caesar_token.isunknown and caesar_token.accented == ["Caesar_acc"]
+
+    def test_tokenizer_flags_verse_start_correctly(self):
+        """
+        Tests the prerequisite: word after a newline is flagged as `is_context_start`.
+        """
+        from macronizer import Tokenization
+
+        tokenization = Tokenization("quem non\nFors ignara dedit.")
+        fors_token = next(t for t in tokenization.tokens if t.text == "Fors")
+        assert (
+            fors_token.is_context_start is True
+        ), "The word 'Fors' at the start of a new line should be flagged as a sentence/verse start."
+
+    def test_tokenizer_flags_prose_sentence_start_correctly(self):
+        """
+        Tests the prerequisite: word after punctuation is flagged as `is_context_start`.
+        """
+        from macronizer import Tokenization
+
+        tokenization = Tokenization("Finis. Novum initium.")
+        novum_token = next(t for t in tokenization.tokens if t.text == "Novum")
+        assert (
+            novum_token.is_context_start is True
+        ), "The word 'Novum' after a period should be flagged as a sentence start."
+
+    def test_tokenizer_does_not_flag_mid_sentence_word(self):
+        """
+        Tests the prerequisite: a mid-sentence word is NOT flagged as `is_context_start`.
+        """
+        from macronizer import Tokenization
+
+        tokenization = Tokenization("Arma virumque cano.")
+        virumque_token = next(t for t in tokenization.tokens if t.text == "virumque")
+        assert (
+            virumque_token.is_context_start is False
+        ), "The word 'virumque' mid-sentence should not be flagged as a sentence start."

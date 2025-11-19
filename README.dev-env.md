@@ -27,9 +27,9 @@ All original installation instructions in `INSTALL.txt` can be disregarded in fa
 
 The core idea is to separate the slow, complex build process from the fast, iterative training and runnable application creation process.
 
-1.  **Golden Base Image (`whothefluff/latin-macronizer:dev-env-v2`)**: A stable, locked image that contains all the compiled tools (Morpheus, RFTagger) but has **not** been trained. You build this once and reuse it many times.
-2.  **Trained Image (`...:dev-env-v2-alatius-treebank-v1`)**: A final, runnable image created from the Golden Base. This image **includes** the trained models and database, making it a self-contained, command-line-runnable application.
-3.  **API Server Image (`...:dev-env-v2-alatius-treebank-v1-api`)**: A final, production-ready image built from a *Trained Image*. Its sole purpose is to serve the model via a web API.
+1.  **Golden Base Image (`whothefluff/latin-macronizer:dev-env-v2.0.1`)**: A stable, locked image that contains all the compiled tools (Morpheus, RFTagger) but has **not** been trained. You build this once and reuse it many times.
+2.  **Trained Image (`...:dev-env-v2.0.1-alatius-treebank-v1`)**: A final, runnable image created from the Golden Base. This image **includes** the trained models and database, making it a self-contained, command-line-runnable application.
+3.  **API Server Image (`...:dev-env-v2.0.1-alatius-treebank-v1-api`)**: A final, production-ready image built from a *Trained Image*. Its sole purpose is to serve the model via a web API.
 
 ### Step 1: Prerequisites
 
@@ -45,10 +45,10 @@ This step compiles all the tools. You only need to do this once, or whenever you
 
     ```bash
     # This command builds the image and tags it with your desired name
-    docker build -t whothefluff/latin-macronizer:dev-env-v2 .
+    docker build -t whothefluff/latin-macronizer:dev-env-v2.0.1 .
     ```
 
-You now have a stable `whothefluff/latin-macronizer:dev-env-v2` image ready for the training process.
+You now have a stable `whothefluff/latin-macronizer:dev-env-v2.0.1` image ready for the training process.
 
 ### Step 3: Train and Create a Final Application Image
 
@@ -90,7 +90,7 @@ This is the interactive workflow you will use every time you want to train the m
 
     ```bash
     # Syntax: docker commit <container_name> <new_image_name:tag>
-    docker commit latin-training-session whothefluff/latin-macronizer:dev-env-v2-alatius-treebank-v1
+    docker commit latin-training-session whothefluff/latin-macronizer:dev-env-v2.0.1-alatius-treebank-v1
     ```
 
 5.  **Clean up** by removing the temporary container, which is no longer needed.
@@ -99,7 +99,7 @@ This is the interactive workflow you will use every time you want to train the m
     docker rm latin-training-session
     ```
 
-You have now created a final, distributable image named `whothefluff/latin-macronizer:dev-env-v2-alatius-treebank-v1` containing the fully configured and trained CLI application.
+You have now created a final, distributable image named `whothefluff/latin-macronizer:dev-env-v2.0.1-alatius-treebank-v1` containing the fully configured and trained CLI application.
 
 ### Step 4 (Optional): Creating a Standalone API Server
 
@@ -111,9 +111,9 @@ Using your result from Step 3 as value for the argument TRAINED_IMAGE_TAG, you c
 
 ```bash
 docker build \
-  --build-arg TRAINED_IMAGE_TAG="whothefluff/latin-macronizer:dev-env-v2-alatius-treebank-v1" \
+  --build-arg TRAINED_IMAGE_TAG="whothefluff/latin-macronizer:dev-env-v2.0.1-alatius-treebank-v1" \
   -f Dockerfile.api \
-  -t "whothefluff/latin-macronizer:dev-env-v2-alatius-treebank-v1-api" \
+  -t "whothefluff/latin-macronizer:dev-env-v2.0.1-alatius-treebank-v1-api" \
   .
 ```
 
@@ -124,13 +124,13 @@ You can now use your trained image to run the macronizer from any terminal, with
 *   To run the built-in test:
 
     ```bash
-    docker run --rm whothefluff/latin-macronizer:dev-env-v2-alatius-treebank-v1 python macronize.py --test
+    docker run --rm whothefluff/latin-macronizer:dev-env-v2.0.1-alatius-treebank-v1 python macronize.py --test
     ```
 
 *   To macronize a string:
 
     ```bash
-    echo "puer in via ambulat" | docker run -i --rm whothefluff/latin-macronizer:dev-env-v2-alatius-treebank-v1 python macronize.py
+    echo "puer in via ambulat" | docker run -i --rm whothefluff/latin-macronizer:dev-env-v2.0.1-alatius-treebank-v1 python macronize.py
     ```
     Output:
     ```
@@ -159,22 +159,22 @@ The training and initialization scripts create four critical files that must be 
 
 1.  **Copy the Database:**
     ```bash
-    docker cp $(docker create whothefluff/latin-macronizer:dev-env-v1-alatius-treebank-v1):/app/macronizer.db .
+    docker cp $(docker create whothefluff/latin-macronizer:dev-env-v2.0.1-alatius-treebank-v1):/app/macronizer.db .
     ```
 
 2.  **Copy the RFTagger Model:**
     ```bash
-    docker cp $(docker create whothefluff/latin-macronizer:dev-env-v1-alatius-treebank-v1):/app/rftagger-ldt.model .
+    docker cp $(docker create whothefluff/latin-macronizer:dev-env-v2.0.1-alatius-treebank-v1):/app/rftagger-ldt.model .
     ```
 
 3.  **Copy the Generated Lemmas Module:**
     ```bash
-    docker cp $(docker create whothefluff/latin-macronizer:dev-env-v1-alatius-treebank-v1):/app/lemmas.py .
+    docker cp $(docker create whothefluff/latin-macronizer:dev-env-v2.0.1-alatius-treebank-v1):/app/lemmas.py .
     ```
 
 4.  **Copy the Generated Endings Module:**
     ```bash
-    docker cp $(docker create whothefluff/latin-macronizer:dev-env-v1-alatius-treebank-v1):/app/macronized_endings.py .
+    docker cp $(docker create whothefluff/latin-macronizer:dev-env-v2.0.1-alatius-treebank-v1):/app/macronized_endings.py .
     ```
 
 5.  **(Recommended) Update `.dockerignore`:**
@@ -206,7 +206,7 @@ You can now use `docker run` with a volume mount. Because your local folder cont
     echo "puer in via ambulat" | docker run --rm -i \
       -p 5678:5678 \
       -v "$(pwd)":/app \
-      whothefluff/latin-macronizer:dev-env-v1-alatius-treebank-v1 \
+      whothefluff/latin-macronizer:dev-env-v2.0.1-alatius-treebank-v1 \
       python -m debugpy --wait-for-client --listen 0.0.0.0:5678 macronize.py
     ```
 
@@ -215,7 +215,7 @@ You can now use `docker run` with a volume mount. Because your local folder cont
     docker run --rm -it \
       -p 5678:5678 \
       -v "$(pwd)":/app \
-      whothefluff/latin-macronizer:dev-env-v1-alatius-treebank-v1 \
+      whothefluff/latin-macronizer:dev-env-v2.0.1-alatius-treebank-v1 \
       python -m debugpy --wait-for-client --listen 0.0.0.0:5678 macronize.py --test
     ```
 
@@ -228,7 +228,7 @@ You can now use `docker run` with a volume mount. Because your local folder cont
     This command starts your API server in the background and maps port `8001` on your local machine to port `8000` inside the container.
 
     ```bash
-    docker run -d --rm --name macronizer-api -p 8001:8000 whothefluff/latin-macronizer:dev-env-v2-alatius-treebank-v1-api
+    docker run -d --rm --name macronizer-api -p 8001:8000 whothefluff/latin-macronizer:dev-env-v2.0.1-alatius-treebank-v1-api
     ```
 
 2.  **Test the endpoint:**
