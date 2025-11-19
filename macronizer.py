@@ -516,16 +516,46 @@ class Token:
         self.isspace = bool(re.match(r"\s", text, flags=re.UNICODE))
         self.hasenclitic = False
         self.isenclitic = False
-        self.startssentence = False
+        self.is_context_start = False
         self.endssentence = False
         self.isunknown = False
 
     # enddef
 
+    def _apply_case_from_plain(self, candidate_text: str) -> str:
+        """
+        Projects the casing from the original token text (`self.text`) onto a
+        macronized candidate string. Assumes skeletons match.
+        Example: self.text="UNUS", candidate_text="ūnus" -> "ŪNUS"
+        """
+        plain_text = self.text
+        # Fallback for safety
+        if (
+            plain_text.lower()
+            != candidate_text.replace("_", "").replace("^", "").lower()
+        ):
+            return candidate_text
+
+        result_chars = []
+        plain_idx = 0
+        for char_in_candidate in candidate_text:
+            if char_in_candidate in "_^":
+                result_chars.append(char_in_candidate)
+            else:
+                # This is a letter, so we take the corresponding letter
+                # from the original plain_text to preserve its case.
+                if plain_idx < len(plain_text):
+                    result_chars.append(plain_text[plain_idx])
+                    plain_idx += 1
+                else:
+                    # Should not happen if skeletons match, but a safe fallback.
+                    result_chars.append(char_in_candidate)
+        return "".join(result_chars)
+
     def split(self, pos, enclitic):
         newtokena = Token(self.text[:-pos])
         newtokenb = Token(self.text[-pos:])
-        newtokena.startssentence = self.startssentence
+        newtokena.is_context_start = self.is_context_start
         if enclitic:
             newtokena.hasenclitic = True
             newtokenb.isenclitic = True
@@ -566,15 +596,17 @@ class Token:
         # Enclitic tokens are not macronized (except "ue" when converting u→v)
         if self.isenclitic and not (plain.lower() == "ue" and performutov):
             return plain
-        # If the only difference is underscores, we can return quickly
-        if plain == accented.replace("_", ""):
-            return accented if domacronize else plain
+        # Normalize both to lowercase for the alignment, then re-apply the original casing at the end.
+        plain_original_case = plain
+        plain = plain.lower()
+        accented_for_align = accented.lower()
+
         # Skeleton check: compare after removing underscores and normalizing to UI orthography + ASCII
         s_plain = touiorthography(toascii(plain)).lower()
-        s_acc = touiorthography(toascii(accented.replace("_", ""))).lower()
+        s_acc = touiorthography(toascii(accented_for_align.replace("_", ""))).lower()
         if s_plain != s_acc:
             # Not the same word skeleton; avoid forcing a dubious alignment
-            return plain
+            return plain_original_case
 
         def inscost(a):
             return 0 if a == "_" else 2
@@ -589,23 +621,23 @@ class Token:
         def delcost(_):
             return 2
 
-        # Build DP table
+        # Build DP table using the now-consistent lowercase strings
         n = len(plain) + 1
-        m = len(accented) + 1
+        m = len(accented_for_align) + 1
         distance = [[0 for _ in range(m)] for _ in range(n)]
         for i in range(1, n):
             distance[i][0] = distance[i - 1][0] + delcost(plain[i - 1])
         for j in range(1, m):
-            distance[0][j] = distance[0][j - 1] + inscost(accented[j - 1])
+            distance[0][j] = distance[0][j - 1] + inscost(accented_for_align[j - 1])
         for i in range(1, n):
             for j in range(1, m):
-                if toascii(plain[i - 1].lower()) == toascii(accented[j - 1].lower()):
+                if toascii(plain[i - 1]) == toascii(accented_for_align[j - 1]): # Simpler comparison now
                     distance[i][j] = distance[i - 1][j - 1]
                 else:
                     rghtcost = distance[i - 1][j] + delcost(plain[i - 1])
-                    downcost = distance[i][j - 1] + inscost(accented[j - 1])
+                    downcost = distance[i][j - 1] + inscost(accented_for_align[j - 1])
                     diagcost = distance[i - 1][j - 1] + subcost(
-                        plain[i - 1], accented[j - 1]
+                        plain[i - 1], accented_for_align[j - 1]
                     )
                     distance[i][j] = min(rghtcost, diagcost, downcost)
         # Backtrace with explicit flush of remainders
@@ -614,40 +646,41 @@ class Token:
         result = ""
         while i > 0 and j > 0:
             # Prefer diagonal when ties occur to keep alignment stable
-            same = toascii(plain[i - 1].lower()) == toascii(accented[j - 1].lower())
+            same = toascii(plain[i - 1]) == toascii(accented_for_align[j - 1])
             diag_needed = distance[i][j] == distance[i - 1][j - 1] + (
-                0 if same else subcost(plain[i - 1], accented[j - 1])
+                0 if same else subcost(plain[i - 1], accented_for_align[j - 1])
             )
-            up_needed = distance[i][j] == distance[i][j - 1] + inscost(accented[j - 1])
+            up_needed = distance[i][j] == distance[i][j - 1] + inscost(accented_for_align[j - 1])
             if diag_needed:
                 i -= 1
                 j -= 1
-                if performutov and accented[j].lower() == "v" and plain[i] == "u":
+                if performutov and accented[j].lower() == "v" and plain_original_case[i] == "u":
                     result = "v" + result
-                elif performutov and accented[j].lower() == "v" and plain[i] == "U":
+                elif performutov and accented[j].lower() == "v" and plain_original_case[i] == "U":
                     result = "V" + result
-                elif performitoj and accented[j].lower() == "j" and plain[i] == "i":
+                elif performitoj and accented[j].lower() == "j" and plain_original_case[i] == "i":
                     result = "j" + result
-                elif performitoj and accented[j].lower() == "j" and plain[i] == "I":
+                elif performitoj and accented[j].lower() == "j" and plain_original_case[i] == "I":
                     result = "J" + result
                 else:
-                    result = plain[i] + result
+                    # Take character from original text to preserve its case
+                    result = plain_original_case[i] + result
             elif up_needed:
                 j -= 1
-                if domacronize and accented[j] == "_":
+                if domacronize and accented_for_align[j] == "_":
                     result = "_" + result
             else:  # Left move
                 i -= 1
-                result = plain[i] + result
+                result = plain_original_case[i] + result
         # Flush any remaining insertions (underscores) from accented
         while j > 0:
             j -= 1
-            if domacronize and accented[j] == "_":
+            if domacronize and accented_for_align[j] == "_":
                 result = "_" + result
         # Flush any remaining deletions (characters) from plain
         while i > 0:
             i -= 1
-            result = plain[i] + result
+            result = plain_original_case[i] + result
         # Some strange morpheus output (e.g. de_e_recti_) may give an additional _ in the result:
         result = result.replace("__", "_")
         return result
@@ -678,32 +711,35 @@ class Token:
             return {
                 "word": self.text,
                 "is_word": self.isword,
-                "macronized": macronized,
+                "macronized": final_macronized_text,
                 "uncertainty_mask": (1 << word_len) - 1 if word_len > 0 else 0,
                 "candidates": [],
             }
 
         uncertainty_mask = 0
+        # Create the unique list for display, preserving the original order of first appearance
+        # and correctly cased
         unique_candidates = list(
             dict.fromkeys(
-                postags.unicodeaccents(c.replace("^", "")) for c in self.accented
+                postags.unicodeaccents(self._apply_case_from_plain(c.replace("^", "")))
+                for c in self.accented
             )
         )
         # Only enter if there is a real, mappable ambiguity to calculate.
         if len(unique_candidates) > 1:
-            best_guess_unicode = unique_candidates[0]
-            base_skeleton = postags.removemacrons(best_guess_unicode)
+            best_guess = unique_candidates[0]
+            base_skeleton = postags.removemacrons(best_guess).lower()
             comparable_candidates = [
                 cand
                 for cand in unique_candidates
-                if postags.removemacrons(cand) == base_skeleton
+                if postags.removemacrons(cand).lower() == base_skeleton
             ]
             # The core logic: only calculate a non-zero mask if there is more
             # than one candidate with the *exact same word skeleton*.
             if len(comparable_candidates) > 1:
                 for char_index, char in enumerate(base_skeleton):
                     # Only check for ambiguity on vowels.
-                    if char.lower() in "aeiouy":
+                    if char in "aeiouy":
                         # Collect all vowel states (e.g., {'i', 'ī'}) from candidates at this specific character index.
                         macron_states_for_vowel = {
                             cand[char_index] for cand in comparable_candidates
@@ -732,19 +768,33 @@ class Tokenization:
     def __init__(self, text):
         self.tokens = []
         possiblesentenceend = False
-        sentencehasended = True
-        # This does not work?: [^\W\d_]+|\s+|([^\w\s]|[\d_])+
+        # This combination correctly identifies a new verse in a poem, a new paragraph, or the start of a text
+        sentencehasended = True  # Tracks sentence-ending punctuation (.;:?!).
+        follows_newline = (
+            True  # Tracks if the last non-space token contained a newline.
+        )
+
         for chunk in re.findall(r"[^\W\d_]+|\s+|[^\w\s]+|[\d_]+", text, re.UNICODE):
             token = Token(chunk)
             if token.isword:
-                if sentencehasended:
-                    token.startssentence = True
+
+                if sentencehasended or follows_newline:
+                    token.is_context_start = True
+
+                # Reset flags after processing the word
                 sentencehasended = False
+                follows_newline = False
                 possiblesentenceend = len(token.text) > 1
-            elif possiblesentenceend and any(i in token.text for i in ".;:?!"):
-                token.endssentence = True
-                possiblesentenceend = False
-                sentencehasended = True
+
+            else:  # Token is not a word (whitespace or punctuation)
+                if possiblesentenceend and any(i in token.text for i in ".;:?!"):
+                    token.endssentence = True
+                    possiblesentenceend = False
+                    sentencehasended = True
+                # If the current non-word chunk contains a newline, set the flag for the *next* word.
+                if "\n" in token.text:
+                    follows_newline = True
+
             self.tokens.append(token)
         self.scannedfeet = []
 
@@ -1007,81 +1057,131 @@ class Tokenization:
             # endif
             token.lemma = best_lemma
 
-    # enddef
+    @staticmethod
+    def levenshtein(s1, s2):
+        if len(s1) < len(s2):
+            # pylint: disable=arguments-out-of-order
+            return Tokenization.levenshtein(s2, s1)
+        if len(s2) == 0:
+            return len(s1)
+        previous_row = range(len(s2) + 1)
+        for i, c1 in enumerate(s1):
+            current_row = [i + 1]
+            for j, c2 in enumerate(s2):
+                insertions = previous_row[j + 1] + 1
+                deletions = current_row[j] + 1
+                substitutions = previous_row[j] + (c1 != c2)
+                current_row.append(min(insertions, deletions, substitutions))
+            previous_row = current_row
+        return previous_row[-1]
 
     def getaccents(self, wordlist):
-
-        def levenshtein(s1, s2):
-            if len(s1) < len(s2):
-                return levenshtein(s2, s1)  # pylint: disable=arguments-out-of-order
-            if len(s2) == 0:
-                return len(s1)
-            previous_row = range(len(s2) + 1)
-            for i, c1 in enumerate(s1):
-                current_row = [i + 1]
-                for j, c2 in enumerate(s2):
-                    insertions = previous_row[j + 1] + 1
-                    deletions = current_row[j] + 1
-                    substitutions = previous_row[j] + (c1 != c2)
-                    current_row.append(min(insertions, deletions, substitutions))
-                previous_row = current_row
-            return previous_row[-1]
-
-        # enddef
-
+        prev_word_was_all_caps = False
+        prev_word_was_capitalized = False
         for token in self.tokens:
             if not token.isword:
                 continue
-            wordform = toascii(token.text)
-            iscapital = wordform.istitle()
-            wordform = wordform.lower()
-            tag = token.tag
-            lemma = token.lemma
-            if token.isenclitic:
-                token.accented = (
-                    ["ve"] if token.text.lower() == "ue" else [token.text.lower()]
-                )
-            elif token.text.lower() == "ne" and token.hasenclitic:  # Not nēque...
-                token.accented = ["ne"]
-            elif len(set(wordlist.formtoaccenteds[wordform])) == 1:
-                token.accented = [wordlist.formtoaccenteds[wordform][0]]
-            elif wordform in wordlist.formtotaglemmaaccents:
-                candidates = []
-                for lextag, lexlemma, accented in wordlist.formtotaglemmaaccents[
-                    wordform
-                ]:
-                    # Prefer lemmas with same capitalization as the token, unless the token is at
-                    # the start of the sentence and capitalized, in which case any lemma is okay.
-                    casedist = (
-                        0
-                        if iscapital == lexlemma.istitle()
-                        or token.startssentence
-                        and iscapital
-                        else 1
-                    )
-                    tagdist = postags.tag_distance(tag, lextag)
-                    lemdist = levenshtein(lemma, lexlemma)
-                    candidates.append((casedist, tagdist, lemdist, accented))
-                candidates.sort()
-                token.accented = []
-                for casedist, tagdist, lemdist, accented in candidates:
-                    if accented not in token.accented and casedist == candidates[0][0]:
-                        token.accented.append(accented)
-            else:
-                # Unknown word, but attempt to mark vowels in ending:
-                # To-do: Better support for different capitalization and orthography
-                token.accented = [token.text]
-                if any(i in token.text for i in "aeiouyAEIOUY"):
-                    for accented_ending in tag_to_endings.get(tag, []):
-                        plain_ending = accented_ending.replace("_", "").replace("^", "")
-                        if wordform.endswith(plain_ending):
-                            token.accented = [
-                                wordform[: -len(plain_ending)] + accented_ending
-                            ]
-                            break
-                    token.isunknown = True
 
-    # enddef
+            wordform_original_case = toascii(token.text)
+            is_all_caps = (
+                wordform_original_case.isupper() and len(wordform_original_case) > 1
+            )
+            is_capitalized = False  # Initialize here for the finally block
+
+            try:
+                is_capitalized = wordform_original_case.istitle() or is_all_caps
+                wordform = wordform_original_case.lower()
+
+                tag = token.tag
+                lemma = token.lemma
+                if token.isenclitic:
+                    token.accented = (
+                        ["ve"] if token.text.lower() == "ue" else [token.text.lower()]
+                    )
+                    continue
+                if token.text.lower() == "ne" and token.hasenclitic:  # Not nēque...
+                    token.accented = ["ne"]
+                    continue
+
+                if wordform in wordlist.formtotaglemmaaccents:
+                    # ALL CAPS mid-sentence is an error/unknown, unless it's part of a sequence.
+                    if (
+                        is_all_caps
+                        and not token.is_context_start
+                        and not prev_word_was_all_caps
+                    ):
+                        token.accented = [token.text]
+                        token.isunknown = True
+                        continue
+
+                    raw = []
+                    for lextag, lexlemma, accented in wordlist.formtotaglemmaaccents[
+                        wordform
+                    ]:
+                        # Asymmetrical case filter:
+                        # If the input token is lowercase, do NOT consider Titlecase lemmas (no proper noun from lowercase).
+                        if not is_capitalized and lexlemma.istitle():
+                            continue
+
+                        # Rank by case; forgive capitalized words at context start (text/verse/sentence) or in sequence.
+                        is_case_mismatch = is_capitalized != lexlemma.istitle()
+                        is_forgivable = (token.is_context_start and is_capitalized) or (
+                            is_capitalized and prev_word_was_capitalized
+                        )
+                        casedist = 0 if (not is_case_mismatch or is_forgivable) else 1
+                        
+                        # Tie-breaker to prefer proper nouns (score 0) over common nouns (score 1) when casedist is tied
+                        case_preference_penalty = 0 if lexlemma.istitle() else 1
+
+                        tagdist = postags.tag_distance(tag, lextag)
+                        lemdist = Tokenization.levenshtein(lemma, lexlemma)
+                        raw.append((casedist, case_preference_penalty, tagdist, lemdist, accented, lexlemma))
+
+                    # Mid-context Titlecase token with no Titlecase lemma candidates:
+                    # very likely an editorial capitalization -> mark as unknown.
+                    if (
+                        token.text.istitle()
+                        and not token.is_context_start
+                        and not prev_word_was_capitalized
+                        and not any(lexlemma.istitle() for _, _, _, _, _, lexlemma in raw)
+                    ):
+                        token.accented = [token.text]
+                        token.isunknown = True
+                        continue
+
+                    raw.sort()
+                    token.accented = []
+                    if raw:
+                        best_casedist = raw[0][0]
+                        for casedist, _, _, _, accented, _ in raw:
+                            if (
+                                casedist == best_casedist
+                                and accented not in token.accented
+                            ):
+                                token.accented.append(accented)
+                    else:
+                        token.accented = [token.text]
+                        token.isunknown = True
+                        continue
+
+                else:
+                    # Unknown word, but attempt to mark vowels in ending:
+                    # To-do: Better support for different capitalization and orthography
+                    token.accented = [token.text]
+                    if any(i in token.text for i in "aeiouyAEIOUY"):
+                        for accented_ending in tag_to_endings.get(tag, []):
+                            plain_ending = accented_ending.replace("_", "").replace(
+                                "^", ""
+                            )
+                            if wordform.endswith(plain_ending):
+                                token.accented = [
+                                    wordform[: -len(plain_ending)] + accented_ending
+                                ]
+                                break
+                        token.isunknown = True
+            finally:
+                prev_word_was_all_caps = is_all_caps
+                prev_word_was_capitalized = is_capitalized
 
     def scanverses(self, meterautomatons):
         """Try to scan the text according to meterautomatons. This function will, for each token,
