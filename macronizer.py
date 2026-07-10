@@ -764,6 +764,20 @@ class Tokenization:
     NO_SYNEZIS_PENALTY = 2  # in the context s or ng + u + vowel
     SYNEZIS_PENALTY = 3
     HIATUS_PENALTY = 3
+    ENCLITIC_SPECIAL_FORMS = [
+        "nec",
+        "neque",
+        "necnon",
+        "seque",
+        "seseque",
+        "quique",
+        "mecumque",
+        "tecumque",
+        "secumque",
+    ]
+    # Enclitic suffixes that splittokens knows how to split off.
+    SPLITTABLE_ENCLITIC_SUFFIXES_3 = ("que",)
+    SPLITTABLE_ENCLITIC_SUFFIXES_2 = ("ve", "ue", "ne", "st")
 
     def __init__(self, text):
         self.tokens = []
@@ -897,53 +911,80 @@ class Tokenization:
     }
     # satisdare, satisdetur, etc
 
-    def splittokens(self, wordlist):
-        newwords = set()
-        newtokens = []
+    @staticmethod
+    def _skeleton(text: str) -> str:
+        """Length-normalized comparable form: no macrons/breves, ui-orthography, ascii, lowercase"""
+        return touiorthography(toascii(text.replace("_", "").replace("^", ""))).lower()
+
+    def _morpheus_returned_only_stem(
+        self, asciiword: str, stem: str, wordlist: Wordlist
+    ) -> bool:
+        """Return whether every Morpheus accented form matches the expected stem."""
+        accenteds: list[str] | None = wordlist.formtoaccenteds.get(asciiword)
+        if not accenteds:
+            return False
+        stem_skeleton = Tokenization._skeleton(stem)
+        return all(
+            Tokenization._skeleton(accented) == stem_skeleton for accented in accenteds
+        )
+
+    def splittokens(self, wordlist: Wordlist) -> set[str]:
+        newwords: set[str] = set()
+        newtokens: list[Token] = []
         for oldtoken in self.tokens:
-            tobeadded = []
-            oldlc = oldtoken.text.lower()
-            if (
-                oldtoken.isword
-                and oldlc != "que"
-                and (
-                    oldlc in wordlist.unknownwords
-                    or oldlc
-                    in [
-                        "nec",
-                        "neque",
-                        "necnon",
-                        "seque",
-                        "seseque",
-                        "quique",
-                        "mecumque",
-                        "tecumque",
-                        "secumque",
-                    ]
-                )
-            ):
+
+            tobeadded: list[Token] = []
+
+            oldlc: str = oldtoken.text.lower()
+            if oldtoken.isword and oldlc != "que":
+                # Pre-calculate how and where we might split this word
+                split_pos: int = 0
+                is_enclitic_split = True
                 if oldlc == "nec":
-                    tobeadded = oldtoken.split(1, True)
+                    split_pos = 1
                 elif oldlc == "necnon":
-                    [tempa, tempb] = oldtoken.split(3, False)
-                    tobeadded = tempa.split(1, True) + [tempb]
+                    pass  # Handled specially below
                 elif oldlc in Tokenization.dividenda:
-                    tobeadded = oldtoken.split(Tokenization.dividenda[oldlc], False)
-                elif len(oldlc) > 3 and oldlc.endswith("que"):
-                    tobeadded = oldtoken.split(3, True)
-                elif len(oldlc) > 2 and oldlc.endswith(("ve", "ue", "ne", "st")):
-                    tobeadded = oldtoken.split(2, True)
-            # endif
+                    split_pos = Tokenization.dividenda[oldlc]
+                    is_enclitic_split = False
+                elif len(oldlc) > 3 and oldlc.endswith(
+                    Tokenization.SPLITTABLE_ENCLITIC_SUFFIXES_3
+                ):
+                    split_pos = 3
+                elif len(oldlc) > 2 and oldlc.endswith(
+                    Tokenization.SPLITTABLE_ENCLITIC_SUFFIXES_2
+                ):
+                    split_pos = 2
+
+                is_unknown_to_morpheus = oldlc in wordlist.unknownwords
+                is_forced_split = oldlc in Tokenization.ENCLITIC_SPECIAL_FORMS
+                has_only_stem_parses = False
+                if (
+                    not is_unknown_to_morpheus
+                    and not is_forced_split
+                    and is_enclitic_split
+                    and split_pos > 0
+                ):
+                    stem = oldlc[:-split_pos]
+                    has_only_stem_parses = self._morpheus_returned_only_stem(
+                        toascii(oldlc), toascii(stem), wordlist
+                    )
+                if is_unknown_to_morpheus or is_forced_split or has_only_stem_parses:
+                    if oldlc == "necnon":
+                        [tempa, tempb] = oldtoken.split(3, False)
+                        tobeadded = tempa.split(1, True) + [tempb]
+                    elif split_pos > 0:
+                        tobeadded = oldtoken.split(split_pos, is_enclitic_split)
+
             if len(tobeadded) == 0:
                 newtokens.append(oldtoken)
             else:
                 for part in tobeadded:
                     newwords.add(toascii(part.text).lower())
                     newtokens.append(part)
+
         self.tokens = newtokens
         return newwords
-
-    # enddef
 
     def show(self):
         for token in self.tokens[:500]:
@@ -1129,7 +1170,7 @@ class Tokenization:
                             is_capitalized and prev_word_was_capitalized
                         )
                         casedist = 0 if (not is_case_mismatch or is_forgivable) else 1
-                        
+
                         # Tie-breaker to prefer proper nouns (score 0) over common nouns (score 1) when casedist is tied
                         case_preference_penalty = 0 if lexlemma.istitle() else 1
 

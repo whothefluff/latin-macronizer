@@ -1670,3 +1670,210 @@ class TestCapitalizationAndVerseLogic:
         assert (
             virumque_token.is_context_start is False
         ), "The word 'virumque' mid-sentence should not be flagged as a sentence start."
+
+
+def _single_word_tokenization(mod, word):
+    """Tokenization containing exactly one real Token, bypassing text parsing."""
+    t = mod.Tokenization("")
+    t.tokens = [mod.Token(word)]
+    return t
+
+
+def _wordlist_stub(mocker, unknown=(), accenteds=None):
+    wl = mocker.MagicMock()
+    wl.unknownwords = set(unknown)
+    wl.formtoaccenteds = defaultdict(list)
+    for k, v in (accenteds or {}).items():
+        wl.formtoaccenteds[k] = list(v)
+    return wl
+
+
+class TestSplittokensUnknownWordFallback:
+    """
+    Regression scenarios for versions of Morpheus that don't return
+    analyses for a word with an enclitic
+    """
+
+    @pytest.mark.parametrize(
+        "word, expected_parts",
+        [
+            ("nullamque", ["nullam", "que"]),
+            ("tune", ["tu", "ne"]),
+            ("paterve", ["pater", "ve"]),
+            ("plenaue", ["plena", "ue"]),
+            ("factumst", ["factum", "st"]),  # prodelision
+        ],
+    )
+    def test_unknown_word_is_split(self, macronizer, mocker, word, expected_parts):
+        t = _single_word_tokenization(macronizer, word)
+        wl = _wordlist_stub(mocker, unknown={word})
+
+        newwords = t.splittokens(wl)
+
+        assert [tok.text for tok in t.tokens] == expected_parts
+        assert newwords == set(expected_parts)
+
+    def test_unknown_word_split_sets_enclitic_flags(self, macronizer, mocker):
+        t = _single_word_tokenization(macronizer, "nullamque")
+        wl = _wordlist_stub(mocker, unknown={"nullamque"})
+
+        t.splittokens(wl)
+
+        stem, clitic = t.tokens
+        assert stem.hasenclitic and not stem.isenclitic
+        assert clitic.isenclitic and not clitic.hasenclitic
+
+    def test_special_form_nec_is_split(self, macronizer, mocker):
+        # 'nec' is split regardless of Morpheus recognition (special list).
+        t = _single_word_tokenization(macronizer, "nec")
+        wl = _wordlist_stub(mocker, accenteds={"nec": ["nec"]})
+
+        t.splittokens(wl)
+
+        assert [tok.text for tok in t.tokens] == ["ne", "c"]
+
+    def test_bare_que_is_never_split(self, macronizer, mocker):
+        t = _single_word_tokenization(macronizer, "que")
+        wl = _wordlist_stub(mocker, unknown={"que"})
+
+        newwords = t.splittokens(wl)
+
+        assert [tok.text for tok in t.tokens] == ["que"]
+        assert newwords == set()
+
+    def test_unknown_dividenda_word_split_without_enclitic_flags(
+        self, macronizer, mocker
+    ):
+        t = _single_word_tokenization(macronizer, "respublica")
+        wl = _wordlist_stub(mocker, unknown={"respublica"})
+
+        t.splittokens(wl)
+
+        assert [tok.text for tok in t.tokens] == ["res", "publica"]
+        assert not any(tok.hasenclitic or tok.isenclitic for tok in t.tokens)
+
+
+class TestSplittokensStemOnlyParses:
+    """
+    Handles Morpheus builds that recognize an enclitic form but return
+    accented forms covering only its stem.
+    """
+
+    @pytest.mark.parametrize(
+        "word, stem_accenteds, expected_parts",
+        [
+            ("nullamque", ["nu_llam"], ["nullam", "que"]),
+            ("tune", ["tu_"], ["tu", "ne"]),
+            ("paterve", ["pater"], ["pater", "ve"]),
+            ("plenaue", ["ple_na"], ["plena", "ue"]),
+            # NOTE: no "-st" case. Morpheus's enclitic list (post-dc47d28) is
+            # que/ne/ve/ue/vis/piam/dem/dum (it never strips "st"), so the
+            # stem-only scenario is unreachable for it. "-st" words go through
+            # the unknownwords path instead (covered in `TestSplittokensUnknownWordFallback`).
+        ],
+    )
+    def test_recognized_stem_only_word_is_split(
+        self, macronizer, mocker, word, stem_accenteds, expected_parts
+    ):
+        t = _single_word_tokenization(macronizer, word)
+        # Morpheus "succeeded": not unknown, but the accenteds are bare stems.
+        wl = _wordlist_stub(mocker, accenteds={word: stem_accenteds})
+
+        newwords = t.splittokens(wl)
+
+        assert [tok.text for tok in t.tokens] == expected_parts
+        assert newwords == set(expected_parts)
+
+    def test_recognized_stem_only_split_sets_enclitic_flags(self, macronizer, mocker):
+        t = _single_word_tokenization(macronizer, "tune")
+        wl = _wordlist_stub(mocker, accenteds={"tune": ["tu_"]})
+
+        t.splittokens(wl)
+
+        stem, clitic = t.tokens
+        assert stem.text == "tu" and stem.hasenclitic
+        assert clitic.text == "ne" and clitic.isenclitic
+
+    def test_split_preserves_context_start_flag(self, macronizer, mocker):
+        t = _single_word_tokenization(macronizer, "nullamque")
+        t.tokens[0].is_context_start = True
+        wl = _wordlist_stub(mocker, accenteds={"nullamque": ["nu_llam"]})
+
+        t.splittokens(wl)
+
+        assert t.tokens[0].is_context_start is True
+        assert t.tokens[1].is_context_start is False
+
+
+class TestSplittokensDoesNotOverSplit:
+    """
+    Guards for the new trigger: pass before AND after the fix.
+    A skeleton-covering accented form must suppress splitting.
+    """
+
+    def test_full_match_suppresses_split(self, macronizer, mocker):
+        t = _single_word_tokenization(macronizer, "quisque")
+        wl = _wordlist_stub(mocker, accenteds={"quisque": ["qui_sque"]})
+
+        newwords = t.splittokens(wl)
+
+        assert [tok.text for tok in t.tokens] == ["quisque"]
+        assert newwords == set()
+
+    def test_mixed_stem_and_full_parses_suppress_split(self, macronizer, mocker):
+        # Morpheus returns both a stripped stem AND a genuine full-word parse.
+        t = _single_word_tokenization(macronizer, "quisque")
+        wl = _wordlist_stub(mocker, accenteds={"quisque": ["quis", "qui_sque"]})
+
+        t.splittokens(wl)
+
+        assert [tok.text for tok in t.tokens] == ["quisque"]
+
+    def test_ij_uv_orthography_counts_as_full_match(self, macronizer, mocker):
+        # 'j' vs 'i' must not be treated as a skeleton mismatch.
+        t = _single_word_tokenization(macronizer, "iamque")
+        wl = _wordlist_stub(mocker, accenteds={"iamque": ["jamque"]})
+
+        t.splittokens(wl)
+
+        assert [tok.text for tok in t.tokens] == ["iamque"]
+
+    def test_unsplittable_suffix_mismatch_leaves_token_alone(self, macronizer, mocker):
+        # 'dam/dem/vis/piam/dum' are stripped by new Morpheus but splittokens
+        # cannot split them; the token must pass through unchanged (documented
+        # limitation: get_macronized will bail out to plain text as before).
+        t = _single_word_tokenization(macronizer, "quidam")
+        wl = _wordlist_stub(mocker, accenteds={"quidam": ["qui_"]})
+
+        newwords = t.splittokens(wl)
+
+        assert [tok.text for tok in t.tokens] == ["quidam"]
+        assert newwords == set()
+
+    def test_unrelated_mismatched_parse_does_not_trigger_split(
+        self, macronizer, mocker
+    ):
+        """
+        If Morpheus returns the wrong parse for some reason,
+        it should NOT trigger the stem-only split fallback.
+        """
+        t = _single_word_tokenization(macronizer, "nullamque")
+        # 'aliud' does not match the skeleton of the stem
+        wl = _wordlist_stub(mocker, accenteds={"nullamque": ["aliud"]})
+
+        newwords = t.splittokens(wl)
+
+        # Word should remain intact.
+        assert [tok.text for tok in t.tokens] == ["nullamque"]
+        assert newwords == set()
+
+    def test_recognized_dividenda_stem_parse_does_not_trigger_split(
+        self, macronizer, mocker
+    ):
+        t = _single_word_tokenization(macronizer, "respublica")
+        wl = _wordlist_stub(mocker, accenteds={"respublica": ["res"]})
+
+        newwords = t.splittokens(wl)
+
+        assert [tok.text for tok in t.tokens] == ["respublica"]
+        assert newwords == set()
