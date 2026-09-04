@@ -11,9 +11,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /build
 
 # Build Morpheus
-RUN git clone https://github.com/Alatius/morpheus.git && \
-    cd morpheus/src && make && make install && cd .. && \
-    ./update.sh && ./update.sh
+RUN git clone --branch my-custom-build \
+    https://github.com/whothefluff/morpheus-alatius-xml.git morpheus && \
+    cd morpheus && make
 # Build RFTagger
 RUN wget -q https://www.cis.uni-muenchen.de/~schmid/tools/RFTagger/data/RFTagger.zip && \
     unzip RFTagger.zip && \
