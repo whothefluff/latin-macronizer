@@ -666244,6 +666244,8 @@ satyricum	a-s---nv-	satiricus	Sa^ty^ri^cum
 satyricus	a-s---mn-	satiricus	Sa^ty^ri^cus
 satis	d--------	satis	satis
 satis	n-----n--	satis	satis
+satin	d--------	satis	sa^ti^n
+satin	n-----n--	satis	sa^ti^n
 satisdatio	n-s---fn-	satisdatio	sa^tisda^ti^o_
 satisdatio	n-s---fv-	satisdatio	sa^tisda^ti^o_
 satisdatione	n-s---fb-	satisdatio	sa^tisda^ti^o_ne
@@ -792279,6 +792281,8 @@ uiderunt	v3pria---	video	vi_de_runt
 viderunt	v3pria---	video	vi_de_runt
 uides	v2spia---	video	vi^de_s
 vides	v2spia---	video	vi^de_s
+uiden	v2spia---	video	vi^de^n
+viden	v2spia---	video	vi^de^n
 uidet	v3spia---	video	vi^det
 videt	v3spia---	video	vi^det
 uidete	v2ppma---	video	vi^de_te
