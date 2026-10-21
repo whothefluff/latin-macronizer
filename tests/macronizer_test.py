@@ -464,6 +464,26 @@ class TestTokenMacronize:
         # Assert
         assert token.macronized == "ca_usa_"
 
+    def test_aligns_a_form_whose_diaeresis_is_marked_with_a_plus(self, macronizer):
+        """
+        GIVEN the lexicon's form of Threissa, whose + marks the diaeresis of e and i,
+        WHEN macronize is called,
+        THEN the + isn't taken for a letter: the word keeps its macrons.
+        """
+        # Arrange
+        token = macronizer.Token("Threissa")
+        token.accented = ["Thre_i+ssa_", "Thre_i+ssa"]
+
+        # Act
+        token.macronize(
+            domacronize=True, alsomaius=False, performutov=False, performitoj=False
+        )
+
+        # Assert
+        assert token.macronized == "Thre_issa_"
+        # Scanning a verse needs the mark: the e and the i are two syllables
+        assert token.accented == ["Thre_i+ssa_", "Thre_i+ssa"]
+
     def test_domacronize_false_still_performs_uv_orthography_changes(self, macronizer):
         """
         GIVEN domacronize=False but performutov=True,
@@ -1172,6 +1192,27 @@ class TestTokenGetStructuredOutput:
         # The uncertainty mask should be based on the ambiguity between the
         #    unique candidates: 'prōspera' vs 'prōsperā'. The final 'a' is ambiguous.
         #    The word 'prospera' is 8 chars long, so the last char is at index 7 (2^7)
+        assert result["uncertainty_mask"] == 128
+
+    def test_leaves_out_the_plus_that_marks_a_diaeresis(self, _setup_token):
+        """
+        GIVEN the lexicon's forms of Threissa, whose + marks the diaeresis of e and i,
+        WHEN the structured output is built from the macronized word,
+        THEN the + is in neither the word nor its candidates, and the uncertain final a
+        has its own bit, 2^7, not the ninth letter's that the + would push it to.
+        """
+        # Arrange
+        token = _setup_token("Threissa", accented_forms=["Thre_i+ssa", "Thre_i+ssa_"])
+        macronized = token.get_macronized(
+            domacronize=True, alsomaius=False, performutov=False, performitoj=False
+        )
+
+        # Act
+        result = token.get_structured_output(macronized)
+
+        # Assert
+        assert result["macronized"] == "Thrēissa"
+        assert result["candidates"] == ["Thrēissā"]
         assert result["uncertainty_mask"] == 128
 
 

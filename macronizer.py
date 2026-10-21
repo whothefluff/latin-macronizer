@@ -579,7 +579,9 @@ class Token:
         if not self.isword:
             return plain
         accented = self.accented[0]
-        accented = accented.replace("_^", "").replace("^", "")
+        # A '+' only marks a diaeresis but fails the skeleton check.
+        # Scanning verses still reads it from self.accented
+        accented = accented.replace("_^", "").replace("^", "").replace("+", "")
         while "__" in accented:
             accented = accented.replace("__", "_")
         # Mark long before consonantal j if requested (excluding known short-j prefixes)
@@ -718,10 +720,12 @@ class Token:
 
         uncertainty_mask = 0
         # Create the unique list for display, preserving the original order of first appearance
-        # and correctly cased
+        # and correctly cased, but rermoving any '+' (diaeresis mark).
         unique_candidates = list(
             dict.fromkeys(
-                postags.unicodeaccents(self._apply_case_from_plain(c.replace("^", "")))
+                postags.unicodeaccents(
+                    self._apply_case_from_plain(c.replace("^", "").replace("+", ""))
+                )
                 for c in self.accented
             )
         )
