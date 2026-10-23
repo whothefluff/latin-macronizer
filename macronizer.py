@@ -506,6 +506,9 @@ class WordResult(TypedDict):
 
 
 class Token:
+    # Enclitics a reading may lack at the end of its word (eodemque read as eodem)
+    ENCLITIC_ENDINGS = ("que", "ne", "ve", "ue")
+
     def __init__(self, text):
         self.tag = ""
         self.lemma = ""
@@ -572,13 +575,81 @@ class Token:
 
     # enddef
 
+    def aligned(self, accented: str) -> str | None:
+        """
+        An accented form spelled with the token's letters. Morpheus reads some words
+        as a word that differs from them at the end: ten as te_ (te-ne), viden as
+        vi^de_s, opust as o^pus (opus est), eodemque as eo_dem. Such a form keeps its
+        quantities and takes the token's ending (te_n, vi^de_n, o^pust, eo_demque),
+        when all that differs is a consonant or two the form lacks, an enclitic, or an
+        n where the form ends in s. Any other form is another word's: None.
+        """
+        if not accented:
+            return None
+        word = toascii(self.text.lower())
+        s_word = touiorthography(word)
+        s_accented = touiorthography(
+            toascii(accented.lower().replace("_", "").replace("^", "").replace("+", ""))
+        )
+        if s_word == s_accented:
+            return accented
+        shared = 0
+        while (
+            shared < min(len(s_word), len(s_accented))
+            and s_word[shared] == s_accented[shared]
+        ):
+            shared += 1
+        accented_rest, word_rest = s_accented[shared:], s_word[shared:]
+        if accented_rest == "":
+            alignable = word_rest in Token.ENCLITIC_ENDINGS or (
+                len(word_rest) <= 2 and not re.search("[aeiouy]", word_rest)
+            )
+        else:
+            alignable = accented_rest == "s" and word_rest == "n"
+        if not alignable:
+            return None
+        # The form up to the shared letters, with the marks after the last of them
+        letters = 0
+        cut = len(accented)
+        for index, char in enumerate(accented):
+            if char in "_^+":
+                continue
+            if letters == shared:
+                cut = index
+                break
+            letters += 1
+        return accented[:cut] + word[shared:]
+
+    def aligned_accenteds(self) -> list[str]:
+        """The token's accented forms spelled with its letters, those that can be."""
+        return [a for a in (self.aligned(c) for c in self.accented) if a is not None]
+
+    @staticmethod
+    def spellings(accented: str) -> list[str]:
+        """
+        The spellings of a form with common vowels (_^): one for each choice of short
+        or long, all short first, as the vowel is printed (ti^bi_^: ti^bi, ti^bi_).
+        """
+        parts = accented.split("_^")
+        result = []
+        for variant in range(1 << (len(parts) - 1)):
+            spelled = parts[0]
+            for position, part in enumerate(parts[1:]):
+                spelled += ("_" if variant & (1 << position) else "") + part
+            result.append(spelled)
+        return result
+
     def get_macronized(
         self, domacronize: bool, alsomaius: bool, performutov: bool, performitoj: bool
     ) -> str:
         plain = self.text
         if not self.isword:
             return plain
-        accented = self.accented[0]
+        # The best form in the word's own letters; with none, the word as it is
+        aligned = self.aligned_accenteds()
+        if not aligned:
+            return plain
+        accented = aligned[0]
         # A '+' only marks a diaeresis but fails the skeleton check.
         # Scanning verses still reads it from self.accented
         accented = accented.replace("_^", "").replace("^", "").replace("+", "")
@@ -707,8 +778,10 @@ class Token:
             }
 
         final_macronized_text = postags.unicodeaccents(macronized)
+        aligned = self.aligned_accenteds()
 
-        if self.isunknown:
+        # Unknown, or known only as other words, whose quantities aren't its own
+        if self.isunknown or not aligned:
             word_len = len(final_macronized_text)
             return {
                 "word": self.text,
@@ -720,13 +793,15 @@ class Token:
 
         uncertainty_mask = 0
         # Create the unique list for display, preserving the original order of first appearance
-        # and correctly cased, but rermoving any '+' (diaeresis mark).
+        # and correctly cased, but rermoving any '+' (diaeresis mark). The forms in the
+        # word's letters come first, a common vowel (_^) spelled both ways, then others.
+        others = [c for c in self.accented if self.aligned(c) is None]
         unique_candidates = list(
             dict.fromkeys(
                 postags.unicodeaccents(
                     self._apply_case_from_plain(c.replace("^", "").replace("+", ""))
                 )
-                for c in self.accented
+                for c in [s for a in aligned for s in Token.spellings(a)] + others
             )
         )
         # Only enter if there is a real, mappable ambiguity to calculate.

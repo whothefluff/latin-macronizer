@@ -578,6 +578,57 @@ class TestTokenMacronize:
         # Assert
         assert token.macronized == stubbed_return_value
 
+    @pytest.mark.parametrize(
+        "word, accented, expected",
+        [
+            # te-ne cut short to ten, which Morpheus reads as te_ without its n
+            ("ten", ["te_"], "te_n"),
+            # vide-s-ne cut short to viden, read with the n as s
+            ("viden", ["vi^de_s"], "vide_n"),
+            # domus est prodelided to domust, read as domus
+            ("domust", ["domu_s"], "domu_st"),
+            # eodem with its enclitic, read without it
+            ("eodemque", ["eo_dem"], "eo_demque"),
+        ],
+    )
+    def test_spells_a_form_that_differs_at_the_end_with_the_words_ending(
+        self, macronizer, word, accented, expected
+    ):
+        """
+        GIVEN a word that Morpheus reads as another that differs from it only at the end,
+        WHEN macronize is called,
+        THEN the word gets that form's quantities and keeps its own ending.
+        """
+        # Arrange
+        token = macronizer.Token(word)
+        token.accented = accented
+
+        # Act
+        token.macronize(
+            domacronize=True, alsomaius=False, performutov=False, performitoj=False
+        )
+
+        # Assert
+        assert token.macronized == expected
+
+    def test_macronizes_by_the_first_form_in_the_words_letters(self, macronizer):
+        """
+        GIVEN a word whose first form is another word's and whose second is its own,
+        WHEN macronize is called,
+        THEN the word gets its own form's quantities, not none.
+        """
+        # Arrange
+        token = macronizer.Token("amica")
+        token.accented = ["ami_cus", "ami_ca"]
+
+        # Act
+        token.macronize(
+            domacronize=True, alsomaius=False, performutov=False, performitoj=False
+        )
+
+        # Assert
+        assert token.macronized == "ami_ca"
+
 
 class TestTokenizationScanverses:
     """
@@ -1214,6 +1265,72 @@ class TestTokenGetStructuredOutput:
         assert result["macronized"] == "Thrēissa"
         assert result["candidates"] == ["Thrēissā"]
         assert result["uncertainty_mask"] == 128
+
+    def test_sets_the_bit_of_a_common_vowel(self, _setup_token):
+        """
+        GIVEN the lexicon's one form of tibi, whose final i is common (_^),
+        WHEN the structured output is built from the macronized word,
+        THEN the word is printed with the i short, the i is uncertain (2^3),
+        and the long spelling is the candidate.
+        """
+        # Arrange
+        token = _setup_token("tibi", accented_forms=["ti^bi_^"])
+        macronized = token.get_macronized(
+            domacronize=True, alsomaius=False, performutov=False, performitoj=False
+        )
+
+        # Act
+        result = token.get_structured_output(macronized)
+
+        # Assert
+        assert result["macronized"] == "tibi"
+        assert result["candidates"] == ["tibī"]
+        assert result["uncertainty_mask"] == 8
+
+    def test_sets_bits_where_the_forms_spelled_with_the_words_ending_differ(
+        self, _setup_token
+    ):
+        """
+        GIVEN domust (domus est), which Morpheus reads as domūs and domus,
+        WHEN the structured output is built from the macronized word,
+        THEN both forms take the word's t, the first is printed (domūst),
+        and the u, which they disagree on, is uncertain (2^3).
+        """
+        # Arrange
+        token = _setup_token("domust", accented_forms=["domu_s", "domus"])
+        macronized = token.get_macronized(
+            domacronize=True, alsomaius=False, performutov=False, performitoj=False
+        )
+
+        # Act
+        result = token.get_structured_output(macronized)
+
+        # Assert
+        assert result["macronized"] == "domūst"
+        assert result["candidates"] == ["domust"]
+        assert result["uncertainty_mask"] == 8
+
+    def test_returns_full_bitmask_for_a_word_read_only_as_other_words(
+        self, _setup_token
+    ):
+        """
+        GIVEN quantumvis, which Morpheus reads only as quantum, a word that differs
+        from it by more than an ending,
+        WHEN the structured output is built,
+        THEN the word is unknown: every letter's bit is set, 2^10 - 1.
+        """
+        # Arrange
+        token = _setup_token("quantumvis", accented_forms=["quantum"])
+        macronized = token.get_macronized(
+            domacronize=True, alsomaius=False, performutov=False, performitoj=False
+        )
+
+        # Act
+        result = token.get_structured_output(macronized)
+
+        # Assert
+        assert result["macronized"] == "quantumvis"
+        assert result["uncertainty_mask"] == 1023
 
 
 class TestCandidateCasing:
