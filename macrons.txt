@@ -930,6 +930,7 @@ abiretis	v2pisa---	abeo	abi_re_tis
 abiretur	v3sisp---	abeo	abi_re_tur
 abiri	v--pnp---	abeo	abi_ri_
 abis	v2spia---	abeo	abi_s
+abin	v2spia---	abeo	abi_^n
 abisse	v--rna---	abeo	abi_sse
 abissem	v1slsa---	abeo	abi_ssem
 abissent	v3plsa---	abeo	abi_ssent
@@ -970,6 +971,7 @@ abiturum	v-sfpana-	abeo	abitu_rum
 abiturum	v-sfpann-	abeo	abitu_rum
 abiturum	v-sfpanv-	abeo	abitu_rum
 abiturus	v-sfpamn-	abeo	abitu_rus
+abiturun	v-sfpamn-	abeo	abitu_run
 abiuerunt	v3pria---	abeo	abi_ve_runt
 abiverunt	v3pria---	abeo	abi_ve_runt
 abiui	v1sria---	abeo	abi_vi_
@@ -6597,6 +6599,7 @@ accepisses	v2slsa---	accipio	acce_pisse_s
 accepisset	v3slsa---	accipio	acce_pisset
 accepissetis	v2plsa---	accipio	acce_pisse_tis
 accepisti	v2sria---	accipio	acce_pisti_
+accepistin	v2sria---	accipio	acce_pisti_n
 accepistis	v2pria---	accipio	acce_pistis
 accepit	v3sria---	accipio	acce_pit
 accepta	v-prppna-	accipio	accepta
@@ -6835,6 +6838,7 @@ accipimur	v1ppip---	accipio	acci^pimur
 accipimus	v1ppia---	accipio	acci^pimus
 accipio	v1spia---	accipio	acci^pio_
 accipis	v2spia---	accipio	acci^pis
+accipin	v2spia---	accipio	acci^pin
 accipit	v3spia---	accipio	acci^pit
 accipite	v2ppma---	accipio	acci^pite
 accipitis	v2ppia---	accipio	acci^pitis
@@ -12669,6 +12673,7 @@ adduxissem	v1slsa---	adduco	addu_xissem
 adduxissent	v3plsa---	adduco	addu_xissent
 adduxisset	v3slsa---	adduco	addu_xisset
 adduxisti	v2sria---	adduco	addu_xisti_
+adduxtin	v2sria---	adduco	addu_xti_n
 adduxistis	v2pria---	adduco	addu_xistis
 adduxit	v3sria---	adduco	addu_xit
 adederat	v3slia---	adedo	ade_derat
@@ -12850,6 +12855,7 @@ adibit	v3sfia---	adeo	adi_bit
 adibitis	v2pfia---	adeo	adi_bitis
 adibitur	v3sfip---	adeo	adi_bitur
 adibo	v1sfia---	adeo	adi_bo_
+adibon	v1sfia---	adeo	adi_bo_n
 adiens	v-sppafn-	adeo	adie_ns
 adiens	v-sppafv-	adeo	adie_ns
 adiens	v-sppamn-	adeo	adie_ns
@@ -12977,6 +12983,8 @@ adivi	v1sria---	adeo	adi_vi_
 adiuit	v3sria---	adeo	adi_vit
 adivit	v3sria---	adeo	adi_vit
 adeo	d--------	adeo2	a^de^o_
+adeon	d--------	adeo2	a^de^o_n
+adeon	v1spia---	adeo	adeo_n
 adeps	n-s---fn-	adeps	a^deps
 adeps	n-s---mn-	adeps	a^deps
 adipe	n-s---fb-	adeps	a^dipe
@@ -37882,6 +37890,7 @@ aibant	v3piia---	aio	aibant
 aibas	v2siia---	aio	aiba_s
 aibat	v3siia---	aio	aibat
 ais	v2spia---	aio	a^is
+ain	v2spia---	aio	a^in
 ait	v3spia---	aio	a^it
 aiant	v3ppsa---	aio	ajant
 ajant	v3ppsa---	aio	ajant
@@ -40047,6 +40056,7 @@ alieno	a-s---nb-	alienus	a^li^e_no_
 alieno	a-s---nd-	alienus	a^li^e_no_
 alieno	n-s---mb-	alienus	a^li^e_no_
 alieno	n-s---md-	alienus	a^li^e_no_
+alienon	a-s---md-	alienus	a^li^e_no_n
 alienorum	a-p---mg-	alienus	a^li^e_no_rum
 alienorum	a-p---ng-	alienus	a^li^e_no_rum
 alienorum	n-p---mg-	alienus	a^li^e_no_rum
@@ -40062,6 +40072,7 @@ alienum	n-p---mg-	alienus	a^li^e_num
 alienum	n-s---ma-	alienus	a^li^e_num
 alienus	a-s---mn-	alienus	a^li^e_nus
 alienus	n-s---mn-	alienus	a^li^e_nus
+alienun	a-s---mn-	alienus	a^li^e_nun
 alii	n-p---mn-	Alii	A_li^i_
 alii	n-p---mv-	Alii	A_li^i_
 aliis	n-p---mb-	Alii	A_li^i_s
@@ -46344,6 +46355,7 @@ amores	n-p---ma-	amor	a^mo_re_s
 amores	n-p---mn-	amor	a^mo_re_s
 amores	n-p---mv-	amor	a^mo_re_s
 amori	n-s---md-	amor	a^mo_ri_
+amorin	n-s---md-	amor	a^mo_ri_n
 amoribus	n-p---mb-	amor	a^mo_ribus
 amoribus	n-p---md-	amor	a^mo_ribus
 amoris	n-s---mg-	amor	a^mo_ris
@@ -51195,6 +51207,7 @@ adnuissent	v3plsa---	annuo	adnu^issent
 adnuisset	v3slsa---	annuo	adnu^isset
 adnuissetis	v2plsa---	annuo	adnu^isse_tis
 adnuisti	v2sria---	annuo	adnu^isti_
+adnuistin	v2sria---	annuo	adnu^isti_n
 adnuistis	v2pria---	annuo	adnu^istis
 adnuit	v3spia---	annuo	adnu^it
 adnuit	v3sria---	annuo	adnu^it
@@ -54305,6 +54318,7 @@ aperis	v2spia---	aperio	a^pe^ri_s
 aperit	v3spia---	aperio	a^pe^rit
 aperite	v2ppma---	aperio	a^pe^ri_te
 aperitis	v2ppia---	aperio	a^pe^ri_tis
+aperitin	v2ppia---	aperio	a^pe^ri_tin
 aperito	v2sfma---	aperio	a^pe^ri_to_
 aperito	v3sfma---	aperio	a^pe^ri_to_
 aperitur	v3spip---	aperio	a^pe^ri_tur
@@ -74566,6 +74580,7 @@ auderet	v3sisa---	audeo	aude_ret
 auderetis	v2pisa---	audeo	aude_re_tis
 auderi	v--pnp---	audeo	aude_ri_
 audes	v2spia---	audeo	aude_s
+auden	v2spia---	audeo	aude_n
 audet	v3spia---	audeo	audet
 audete	v2ppma---	audeo	aude_te
 audetis	v2ppia---	audeo	aude_tis
@@ -74808,6 +74823,7 @@ audirier	v--pnp---	audio	audi_rier
 audiris	v2spip---	audio	audi_ris
 audiris	v2srsa---	audio	audi_ri_s
 audis	v2spia---	audio	audi_s
+audin	v2spia---	audio	audi_n
 audisse	v--rna---	audio	audi_sse
 audissem	v1slsa---	audio	audi_ssem
 audissemus	v1plsa---	audio	audi_sse_mus
@@ -74816,6 +74832,7 @@ audisses	v2slsa---	audio	audi_sse_s
 audisset	v3slsa---	audio	audi_sset
 audissetis	v2plsa---	audio	audi_sse_tis
 audisti	v2sria---	audio	audi_sti_
+audistin	v2sria---	audio	audi_sti_n
 audistis	v2pria---	audio	audi_stis
 audit	v3spia---	audio	audit
 audita	v-prppna-	audio	audi_ta
@@ -74845,6 +74862,7 @@ auditis	v-prppmd-	audio	audi_ti_s
 auditis	v-prppnb-	audio	audi_ti_s
 auditis	v-prppnd-	audio	audi_ti_s
 auditis	v2ppia---	audio	audi_tis
+auditin	v2ppia---	audio	audi_tin
 audito	v-srppmb-	audio	audi_to_
 audito	v-srppmd-	audio	audi_to_
 audito	v-srppnb-	audio	audi_to_
@@ -74957,6 +74975,8 @@ audiuisset	v3slsa---	audio	audi_visset
 audivisset	v3slsa---	audio	audi_visset
 audiuisti	v2sria---	audio	audi_visti_
 audivisti	v2sria---	audio	audi_visti_
+audiuistin	v2sria---	audio	audi_visti_n
+audivistin	v2sria---	audio	audi_visti_n
 audiuistis	v2pria---	audio	audi_vistis
 audivistis	v2pria---	audio	audi_vistis
 audiuit	v3sria---	audio	audi_vit
@@ -75207,6 +75227,7 @@ auferentibus	v-pppand-	aufero	aufe^rentibus
 auferentur	v3pfip---	aufero	aufe^rentur
 auferere	v2sfip---	aufero	aufe^re_re
 auferes	v2sfia---	aufero	aufe^re_s
+auferen	v2sfia---	aufero	aufe^re_n
 auferet	v3sfia---	aufero	aufe^ret
 auferetis	v2pfia---	aufero	aufe^re_tis
 auferetur	v3sfip---	aufero	aufe^re_tur
@@ -84807,6 +84828,8 @@ bella	a-p---nv-	bellus	bella
 bella	a-s---fb-	bellus	bella_
 bella	a-s---fn-	bellus	bella
 bella	a-s---fv-	bellus	bella
+bellan	a-s---fn-	bellus	bellan
+bellan	a-s---fb-	bellus	bella_n
 bellae	a-p---fn-	bellus	bellae
 bellae	a-p---fv-	bellus	bellae
 bellae	a-s---fd-	bellus	bellae
@@ -87656,6 +87679,8 @@ bina	a-p---nv-	bini	bi_na
 bina	a-s---fb-	bini	bi_na_
 bina	a-s---fn-	bini	bi_na
 bina	a-s---fv-	bini	bi_na
+binan	a-p---na-	bini	bi_nan
+binan	a-p---nn-	bini	bi_nan
 binae	a-p---fn-	bini	bi_nae
 binae	a-p---fv-	bini	bi_nae
 binae	a-s---fd-	bini	bi_nae
@@ -89760,6 +89785,7 @@ bona	a-p---nv-	bonus	bo^na
 bona	a-s---fb-	bonus	bo^na_
 bona	a-s---fn-	bonus	bo^na
 bona	a-s---fv-	bonus	bo^na
+bonan	a-s---fb-	bonus	bo^na_^n
 bonae	a-p---fn-	bonus	bo^nae
 bonae	a-p---fv-	bonus	bo^nae
 bonae	a-s---fd-	bonus	bo^nae
@@ -91099,6 +91125,8 @@ brevi	n-s---fb-	brevis	bre^vi_
 brevi	n-s---fd-	brevis	bre^vi_
 brevi	n-s---mb-	brevis	bre^vi_
 brevi	n-s---md-	brevis	bre^vi_
+breuin	a-s---md-	brevis	bre^vi_^n
+brevin	a-s---md-	brevis	bre^vi_^n
 breuia	a-p---na-	brevis	bre^via
 breuia	a-p---nn-	brevis	bre^via
 breuia	a-p---nv-	brevis	bre^via
@@ -111741,6 +111769,8 @@ cenauerunt	v3pria---	ceno	ce_na_ve_runt
 cenaverunt	v3pria---	ceno	ce_na_ve_runt
 cenaui	v1sria---	ceno	ce_na_vi_
 cenavi	v1sria---	ceno	ce_na_vi_
+cenauin	v1sria---	ceno	ce_na_vi_n
+cenavin	v1sria---	ceno	ce_na_vi_n
 cenauimus	v1pria---	ceno	ce_na_vimus
 cenavimus	v1pria---	ceno	ce_na_vimus
 cenauisses	v2slsa---	ceno	ce_na_visse_s
@@ -112064,6 +112094,7 @@ censeri	v--pnp---	censeo2	ce_nse_ri_
 censerier	v--pnp---	censeo2	ce_nse_rier
 censeris	v2spip---	censeo2	ce_nse_ris
 censes	v2spia---	censeo2	ce_nse_s
+censen	v2spia---	censeo	ce_nse_n
 censet	v3spia---	censeo2	ce_nset
 censete	v2ppma---	censeo2	ce_nse_te
 censetis	v2ppia---	censeo2	ce_nse_tis
@@ -113439,6 +113470,7 @@ cereolus	a-s---mn-	cereolus	ce_re^o^lus
 cerere	n-s---fb-	Ceres	cerere
 cererem	n-s---fa-	Ceres	cererem
 cereri	n-s---fd-	Ceres	Cereri_
+cererin	n-s---fd-	Ceres	Cere^ri_n
 cereris	n-s---fg-	Ceres	Cereris
 ceres	n-s---fn-	Ceres	Cere_s
 ceres	n-s---fv-	Ceres	Cere_s
@@ -114377,6 +114409,7 @@ certas	a-p---fa-	certus	certa_s
 certe	a-s---mv-	certus	certe
 certe	a-s---nv-	certus	certe
 certe	d--------	certus	certe_
+certen	d--------	certus	certe_n
 certi	a-p---mn-	certus	certi_
 certi	a-p---mv-	certus	certi_
 certi	a-s---mg-	certus	certi_
@@ -114470,6 +114503,8 @@ certo	a-s---mb-	certus	certo_
 certo	a-s---md-	certus	certo_
 certo	a-s---nb-	certus	certo_
 certo	a-s---nd-	certus	certo_
+certon	a-s---nb-	certus	certo_n
+certon	d--------	certo	certo_n
 certorum	a-p---mg-	certus	certo_rum
 certorum	a-p---ng-	certus	certo_rum
 certos	a-p---ma-	certus	certo_s
@@ -129679,6 +129714,7 @@ cognosci	v--pnp---	cognosco	cogno_sci_
 cognoscimur	v1ppip---	cognosco	cogno_scimur
 cognoscimus	v1ppia---	cognosco	cogno_scimus
 cognoscis	v2spia---	cognosco	cogno_scis
+cognoscin	v2spia---	cognosco	cogno_scin
 cognoscit	v3spia---	cognosco	cogno_scit
 cognoscite	v2ppma---	cognosco	cogno_scite
 cognoscitis	v2ppia---	cognosco	cogno_scitis
@@ -142237,6 +142273,7 @@ compressa	v-prppnv-	comprimo	compressa
 compressa	v-srppfb-	comprimo	compressa_
 compressa	v-srppfn-	comprimo	compressa
 compressa	v-srppfv-	comprimo	compressa
+compressan	v-srppfb-	comprimo	compressa_n
 compressae	v-prppfn-	comprimo	compressae
 compressae	v-prppfv-	comprimo	compressae
 compressae	v-srppfd-	comprimo	compressae
@@ -170841,6 +170878,8 @@ conuenisset	v3slsa---	convenio	conve_nisset
 convenisset	v3slsa---	convenio	conve_nisset
 conuenisti	v2sria---	convenio	conve_nisti_
 convenisti	v2sria---	convenio	conve_nisti_
+conuenistin	v2sria---	convenio	conve_nisti_n
+convenistin	v2sria---	convenio	conve_nisti_n
 conuenistis	v2pria---	convenio	conve_nistis
 convenistis	v2pria---	convenio	conve_nistis
 conuenit	v3spia---	convenio	conve^nit
@@ -179325,6 +179364,7 @@ credidit	v3sria---	credo	cre_di^dit
 credier	v--pnp---	credo	cre_dier
 credimus	v1ppia---	credo	cre_dimus
 credis	v2spia---	credo	cre_dis
+credin	v2spia---	credo	cre_din
 credit	v3spia---	credo	cre_dit
 credita	v-prppna-	credo	cre_di^ta
 credita	v-prppnn-	credo	cre_di^ta
@@ -179397,6 +179437,7 @@ crediturum	v-sfpanv-	credo	cre_di^tu_rum
 crediturus	v-sfpamn-	credo	cre_di^tu_rus
 creditus	v-srppmn-	credo	cre_di^tus
 credo	v1spia---	credo	cre_do_
+credon	v1spia---	credo	cre_do_n
 credor	v1spip---	credo	cre_dor
 creduam	v1spsa---	credo	cre_duam
 creduas	v2spsa---	credo	cre_duas
@@ -180985,6 +181026,7 @@ crimina	n-p---nn-	crimen	cri_mi^na
 crimina	n-p---nv-	crimen	cri_mi^na
 crimine	n-s---nb-	crimen	cri_mi^ne
 crimini	n-s---nd-	crimen	cri_mi^ni_
+criminin	n-s---nd-	crimen	cri_mi^ni_n
 criminibus	n-p---nb-	crimen	cri_mi^nibus
 criminibus	n-p---nd-	crimen	cri_mi^nibus
 criminis	n-s---ng-	crimen	cri_mi^nis
@@ -185179,6 +185221,7 @@ cupido	a-s---mb-	cupidus	cu^pi^do_
 cupido	a-s---md-	cupidus	cu^pi^do_
 cupido	a-s---nb-	cupidus	cu^pi^do_
 cupido	a-s---nd-	cupidus	cu^pi^do_
+cupidon	n-s---mn-	Cupido	Cu^pi_do_n
 cupidorum	a-p---mg-	cupidus	cu^pi^do_rum
 cupidorum	a-p---ng-	cupidus	cu^pi^do_rum
 cupidos	a-p---ma-	cupidus	cu^pi^do_s
@@ -219637,6 +219680,7 @@ dicier	v--pnp---	dico2	di_cier
 dicimur	v1ppip---	dico2	di_cimur
 dicimus	v1ppia---	dico2	di_cimus
 dicis	v2spia---	dico2	di_cis
+dicin	v2spia---	dico2	di_cin
 dicit	v3spia---	dico2	di_cit
 dicite	v2ppma---	dico2	di_cite
 dicitis	v2ppia---	dico2	di_citis
@@ -219777,6 +219821,7 @@ dixeritis	v2ptia---	dico2	di_xeritis
 dixero	v1stia---	dico2	di_xero_
 dixerunt	v3pria---	dico2	di_xe_runt
 dixi	v1sria---	dico2	di_xi_
+dixin	v1sria---	dico2	di_xi_n
 diximus	v1pria---	dico2	di_ximus
 dixisse	v--rna---	dico2	di_xisse
 dixissem	v1slsa---	dico2	di_xissem
@@ -219785,6 +219830,7 @@ dixissent	v3plsa---	dico2	di_xissent
 dixisses	v2slsa---	dico2	di_xisse_s
 dixisset	v3slsa---	dico2	di_xisset
 dixisti	v2sria---	dico2	di_xisti_
+dixtin	v2sria---	dico2	di_xti_n
 dixistis	v2pria---	dico2	di_xistis
 dixit	v3sria---	dico2	di_xit
 dixti	v2sria---	dico2	di_xti_
@@ -221559,6 +221605,7 @@ dignum	a-s---na-	dignus	dignum
 dignum	a-s---nn-	dignus	dignum
 dignum	a-s---nv-	dignus	dignum
 dignus	a-s---mn-	dignus	dignus
+dignun	a-s---mn-	dignus	dignun
 digrederentur	v3pisp---	digredior	di_gre^derentur
 digrederer	v1sisp---	digredior	di_gre^derer
 digrederetur	v3sisp---	digredior	di_gre^dere_tur
@@ -235700,6 +235747,7 @@ dabatur	v3siip---	do	da^ba_tur
 daberis	v2sfip---	do	da^beris
 dabimus	v1pfia---	do	da^bimus
 dabis	v2sfia---	do	da^bis
+dabin	v2sfia---	do	da^bin
 dabit	v3sfia---	do	da^bit
 dabitis	v2pfia---	do	da^bitis
 dabitur	v3sfip---	do	da^bitur
@@ -235804,6 +235852,7 @@ daretur	v3sisp---	do	da^re_tur
 dari	v--pnp---	do	da^ri_
 daris	v2spip---	do	da^ris
 das	v2spia---	do	da_s
+dan	v2spia---	do	da_n
 dat	v3spia---	do	da^t
 data	v-prppna-	do	da^ta
 data	v-prppnn-	do	da^ta
@@ -235833,6 +235882,7 @@ datis	v-prppmd-	do	da^ti_s
 datis	v-prppnb-	do	da^ti_s
 datis	v-prppnd-	do	da^ti_s
 datis	v2ppia---	do	da^tis
+datin	v2ppia---	do	da^tin
 dato	v-srppmb-	do	da^to_
 dato	v-srppmd-	do	da^to_
 dato	v-srppnb-	do	da^to_
@@ -235871,6 +235921,7 @@ daturi	v-pfpamn-	do	da^tu_ri_
 daturi	v-pfpamv-	do	da^tu_ri_
 daturi	v-sfpamg-	do	da^tu_ri_
 daturi	v-sfpang-	do	da^tu_ri_
+daturin	v-pfpamn-	do	da^tu_ri_n
 daturis	v-pfpafb-	do	da^tu_ri_s
 daturis	v-pfpafd-	do	da^tu_ri_s
 daturis	v-pfpamb-	do	da^tu_ri_s
@@ -235910,6 +235961,7 @@ dederitis	v2ptia---	do	de^deritis
 dedero	v1stia---	do	de^dero_
 dederunt	v3pria---	do	de^de_runt
 dedi	v1sria---	do	de^di_
+dedin	v1sria---	do	de^di_^n
 dedimus	v1pria---	do	de^dimus
 dedisse	v--rna---	do	de^disse
 dedissem	v1slsa---	do	de^dissem
@@ -235919,6 +235971,7 @@ dedisses	v2slsa---	do	de^disse_s
 dedisset	v3slsa---	do	de^disset
 dedissetis	v2plsa---	do	de^disse_tis
 dedisti	v2sria---	do	de^disti_
+dedistin	v2sria---	do	de^disti_n
 dedistis	v2pria---	do	de^distis
 dedit	v3sria---	do	de^dit
 dem	v1spsa---	do	dem
@@ -237540,6 +237593,7 @@ domunculae	n-s---fd-	domuncula	do^muncu^lae
 domunculae	n-s---fg-	domuncula	do^muncu^lae
 domunculam	n-s---fa-	domuncula	do^muncu^lam
 domi	d--------	domus	domi_
+domin	d--------	domus	domi_^n
 domibus	n-p---fb-	domus	domibus
 domibus	n-p---fd-	domus	domibus
 domo	n-s---fb-	domus	domo_
@@ -242216,6 +242270,7 @@ edixerit	v3srsa---	edico	e_di_xerit
 edixerit	v3stia---	edico	e_di_xerit
 edixerunt	v3pria---	edico	e_di_xe_runt
 edixi	v1sria---	edico	e_di_xi_
+edixin	v1sria---	edico	e_di_xi_n
 ediximus	v1pria---	edico	e_di_ximus
 edixisse	v--rna---	edico	e_di_xisse
 edixissem	v1slsa---	edico	e_di_xissem
@@ -245838,10 +245893,16 @@ egnatuleium	n-s---ma-	Egnatuleius	Egna_tu^le_ium
 egnatuleius	n-s---mn-	Egnatuleius	Egna_tu^le_ius
 ego	p-s---fn-	ego	ego
 ego	p-s---mn-	ego	ego
+egon	p-s---fn-	ego	egon
+egon	p-s---mn-	ego	egon
 me	p-s---fa-	ego	me_
 me	p-s---fb-	ego	me_
 me	p-s---ma-	ego	me_
 me	p-s---mb-	ego	me_
+men	p-s---fa-	ego	me_n
+men	p-s---fb-	ego	me_n
+men	p-s---ma-	ego	me_n
+men	p-s---mb-	ego	me_n
 mecum	p-s---fb-	ego	me_cum
 mecum	p-s---mb-	ego	me_cum
 med	p-s---fa-	ego	me_d
@@ -245858,6 +245919,8 @@ mi	p-s---fd-	ego	mi_
 mi	p-s---md-	ego	mi_
 mihi	p-s---fd-	ego	mihi_^
 mihi	p-s---md-	ego	mihi_^
+mihin	p-s---fd-	ego	mihi_^n
+mihin	p-s---md-	ego	mihi_^n
 egredere	v--pna---	egredior	e_gre^dere
 egredere	v2spip---	egredior	e_gre^dere
 egredere	v2spmp---	egredior	e_gre^dere
@@ -251282,6 +251345,7 @@ emissent	v3plsa---	emo	e_missent
 emisses	v2slsa---	emo	e_misse_s
 emisset	v3slsa---	emo	e_misset
 emisti	v2sria---	emo	e_misti_
+emistin	v2sria---	emo	e_misti_n
 emistis	v2pria---	emo	e_mistis
 emit	v3spia---	emo	e^mit
 emit	v3sria---	emo	e_mit
@@ -253438,6 +253502,7 @@ itura	v-pfpanv-	eo	itu_ra
 itura	v-sfpafb-	eo	itu_ra_
 itura	v-sfpafn-	eo	itu_ra
 itura	v-sfpafv-	eo	itu_ra
+ituran	v-sfpafn-	eo	itu_ran
 iturae	v-pfpafn-	eo	itu_rae
 iturae	v-pfpafv-	eo	itu_rae
 iturae	v-sfpafd-	eo	itu_rae
@@ -258591,6 +258656,7 @@ eunuchis	n-p---mb-	eunuchus	eunu_chi_s
 eunuchis	n-p---md-	eunuchus	eunu_chi_s
 eunucho	n-s---mb-	eunuchus	eunu_cho_
 eunucho	n-s---md-	eunuchus	eunu_cho_
+eunuchon	n-s---mb-	eunuchus	eunu_cho_n
 eunuchorum	n-p---mg-	eunuchus	eunu_cho_rum
 eunuchos	n-p---ma-	eunuchus	eunu_cho_s
 eunuchum	n-p---mg-	eunuchus	eunu_chum
@@ -279937,6 +280003,7 @@ expectaturus	v-sfpamn-	exspecto	exspecta_tu_rus
 exspectaturus	v-sfpamn-	exspecto	exspecta_tu_rus
 expectatus	v-srppmn-	exspecto	exspecta_tus
 exspectatus	v-srppmn-	exspecto	exspecta_tus
+exspectatun	v-srppmn-	exspecto	exspecta_tun
 expectaueram	v1slia---	exspecto	exspecta_veram
 expectaveram	v1slia---	exspecto	exspecta_veram
 exspectaueram	v1slia---	exspecto	exspecta_veram
@@ -285396,6 +285463,7 @@ facies	n-s---fn-	facies	fa^ci^e_s
 facile	a-s---na-	facilis	fa^ci^le
 facile	a-s---nn-	facilis	fa^ci^le
 facile	a-s---nv-	facilis	fa^ci^le
+facilen	d--------	facilis	fa^ci^len
 facilem	a-s---fa-	facilis	fa^ci^lem
 facilem	a-s---ma-	facilis	fa^ci^lem
 faciles	a-p---fa-	facilis	fa^ci^le_s
@@ -287485,6 +287553,7 @@ falso	a-s---mb-	falsus	falso_
 falso	a-s---md-	falsus	falso_
 falso	a-s---nb-	falsus	falso_
 falso	a-s---nd-	falsus	falso_
+falson	d--------	falso2	falso_n
 falsom	a-s---ma-	falsus	falsom
 falsom	a-s---na-	falsus	falsom
 falsom	a-s---nn-	falsus	falsom
@@ -289445,6 +289514,7 @@ fatentur	v3ppsp---	fator	fa_tentur
 fater	v1spsp---	fator	fa_ter
 fatere	v2spsp---	fator	fa_te_re
 fateris	v2spsp---	fator	fa_te_ris
+faterin	v2spip---	fateor	fa^te_rin
 fatetur	v3spsp---	fator	fa_te_tur
 fator	v1spip---	fator	fa_tor
 fatua	n-s---fb-	fatua	fa^tu^a_
@@ -292464,6 +292534,7 @@ ferris	n-p---nb-	ferrum	ferri_s
 ferris	n-p---nd-	ferrum	ferri_s
 ferro	n-s---nb-	ferrum	ferro_
 ferro	n-s---nd-	ferrum	ferro_
+ferron	n-s---nb-	ferrum	ferro_n
 ferrum	n-p---ng-	ferrum	ferrum
 ferrum	n-s---na-	ferrum	ferrum
 ferrum	n-s---nn-	ferrum	ferrum
@@ -295880,6 +295951,7 @@ filiolis	n-p---mb-	filiolus	fi_li^o^li_s
 filiolis	n-p---md-	filiolus	fi_li^o^li_s
 filiolo	n-s---mb-	filiolus	fi_li^o^lo_
 filiolo	n-s---md-	filiolus	fi_li^o^lo_
+filiolon	n-s---mb-	filiolus	fi_li^o^lo_n
 filiolos	n-p---ma-	filiolus	fi_li^o^lo_s
 filiolum	n-p---mg-	filiolus	fi_li^o^lum
 filiolum	n-s---ma-	filiolus	fi_li^o^lum
@@ -308193,6 +308265,7 @@ fugimus	v1ppia---	fugio	fu^gimus
 fugimus	v1pria---	fugio	fu_gimus
 fugio	v1spia---	fugio	fu^gio_
 fugis	v2spia---	fugio	fu^gis
+fugin	v2spia---	fugio	fu^gin
 fugisse	v--rna---	fugio	fu_gisse
 fugissem	v1slsa---	fugio	fu_gissem
 fugissemus	v1plsa---	fugio	fu_gisse_mus
@@ -323972,6 +324045,7 @@ habentium	v-pppang-	habeo	ha^bentium
 habento	v3pfma---	habeo	ha^bento_
 habentur	v3ppip---	habeo	ha^bentur
 habeo	v1spia---	habeo	ha^beo_
+habeon	v1spia---	habeo	ha^beo_n
 habeor	v1spip---	habeo	ha^beor
 habere	v--pna---	habeo	ha^be_re
 habere	v2spip---	habeo	ha^be_re
@@ -323989,9 +324063,11 @@ haberi	v--pnp---	habeo	ha^be_ri_
 haberier	v--pnp---	habeo	ha^be_rier
 haberis	v2spip---	habeo	ha^be_ris
 habes	v2spia---	habeo	ha^be_s
+haben	v2spia---	habeo	ha^be_^n
 habet	v3spia---	habeo	ha^bet
 habete	v2ppma---	habeo	ha^be_te
 habetis	v2ppia---	habeo	ha^be_tis
+habetin	v2ppia---	habeo	ha^be_tin
 habeto	v2sfma---	habeo	ha^be_to_
 habeto	v3sfma---	habeo	ha^be_to_
 habetote	v2pfma---	habeo	ha^be_to_te
@@ -329651,6 +329727,9 @@ haec	p-s---fn-	hic	haec
 haecine	p-p---na-	hic	haecine
 haecine	p-p---nn-	hic	haecine
 haecine	p-s---fn-	hic	haecine
+haecin	p-s---fn-	hic	haecin
+haecin	p-p---na-	hic	haecin
+haecin	p-p---nn-	hic	haecin
 hanc	p-s---fa-	hic	hanc
 hancine	p-s---fa-	hic	hancine
 harum	p-p---fg-	hic	ha_rum
@@ -329720,6 +329799,8 @@ hicetae	n-s---mg-	Hicetas	Hi^ce^tae
 hicetas	n-p---ma-	Hicetas	Hi^ce^ta_s
 hicetas	n-s---mn-	Hicetas	Hi^ce^ta_s
 hicine	d--------	hicine	hi_cine
+hicin	p-s---mn-	hic	hicin
+hicin	d--------	hicine	hi_cin
 hiemalia	n-p---na-	hiemalia	hi^e^ma_lia
 hiemalia	n-p---nn-	hiemalia	hi^e^ma_lia
 hiemalia	n-p---nv-	hiemalia	hi^e^ma_lia
@@ -338994,6 +339075,7 @@ illa	p-p---nn-	ille	illa
 illa	p-p---nv-	ille	illa
 illa	p-s---fb-	ille	illa_
 illa	p-s---fn-	ille	illa
+illan	p-s---fb-	ille	illa_n
 illae	p-p---fn-	ille	illae
 illae	p-p---fv-	ille	illae
 illae	p-s---fd-	ille	illae
@@ -357290,6 +357372,7 @@ inconciliare	v2spip---	inconcilio	inconci^lia_re
 inconciliare	v2spmp---	inconcilio	inconci^lia_re
 inconciliaret	v3sisa---	inconcilio	inconci^lia_ret
 inconciliasti	v2sria---	inconcilio	inconci^lia_sti_
+inconciliastin	v2sria---	inconcilio	inconci^lia_sti_n
 inconciliastis	v2pria---	inconcilio	inconci^lia_stis
 inconciliauit	v3sria---	inconcilio	inconci^lia_vit
 inconciliavit	v3sria---	inconcilio	inconci^lia_vit
@@ -369543,6 +369626,7 @@ ingenua	a-p---nv-	ingenuus	inge^nu^a
 ingenua	a-s---fb-	ingenuus	inge^nu^a_
 ingenua	a-s---fn-	ingenuus	inge^nu^a
 ingenua	a-s---fv-	ingenuus	inge^nu^a
+ingenuan	a-s---fn-	ingenuus	inge^nu^an
 ingenuae	a-p---fn-	ingenuus	inge^nu^ae
 ingenuae	a-p---fv-	ingenuus	inge^nu^ae
 ingenuae	a-s---fd-	ingenuus	inge^nu^ae
@@ -378443,6 +378527,7 @@ insani	a-p---mn-	insanus	i_nsa_ni_
 insani	a-p---mv-	insanus	i_nsa_ni_
 insani	a-s---mg-	insanus	i_nsa_ni_
 insani	a-s---ng-	insanus	i_nsa_ni_
+insanin	a-p---mn-	insanus	insa_ni_n
 insanior	a-s---fnc	insanus	i_nsa_nior
 insanior	a-s---fvc	insanus	i_nsa_nior
 insanior	a-s---mnc	insanus	i_nsa_nior
@@ -385085,6 +385170,7 @@ intellexissent	v3plsa---	intellego	intelle_xissent
 intellexisses	v2slsa---	intellego	intelle_xisse_s
 intellexisset	v3slsa---	intellego	intelle_xisset
 intellexisti	v2sria---	intellego	intelle_xisti_
+intellextin	v2sria---	intellego	intelle_xti_n
 intellexistis	v2pria---	intellego	intelle_xistis
 intellexit	v3sria---	intellego	intelle_xit
 intelligam	v1sfia---	intellego	intelli^gam
@@ -399919,6 +400005,7 @@ ipso	p-s---mb-	ipse	ipso_
 ipso	p-s---md-	ipse	ipso_
 ipso	p-s---nb-	ipse	ipso_
 ipso	p-s---nd-	ipse	ipso_
+ipson	p-s---mb-	ipse	ipso_n
 ipsorum	p-p---mg-	ipse	ipso_rum
 ipsorum	p-p---ng-	ipse	ipso_rum
 ipsos	p-p---ma-	ipse	ipso_s
@@ -402151,6 +402238,7 @@ ea	p-p---nn-	is	ea
 ea	p-p---nv-	is	ea
 ea	p-s---fb-	is	ea_
 ea	p-s---fn-	is	ea
+ean	p-s---fb-	is	ea_^n
 eae	p-p---fn-	is	eae
 eae	p-p---fv-	is	eae
 eam	p-s---fa-	is	eam
@@ -402175,6 +402263,7 @@ ejus	p-s---mg-	is	ejus
 ejus	p-s---ng-	is	ejus
 eo	p-s---mb-	is	eo_
 eo	p-s---nb-	is	eo_
+eon	v1spia---	eo	eo_^n
 eorum	p-p---mg-	is	eo_rum
 eorum	p-p---ng-	is	eo_rum
 eos	p-p---ma-	is	eo_s
@@ -402188,6 +402277,8 @@ iis	p-p---fd-	is	ii_s
 iis	p-p---md-	is	ii_s
 iis	p-p---nd-	is	ii_s
 is	p-s---mn-	is	is
+in	p-s---mn-	is	in
+in	v2spia---	eo	i_n
 isaac	n-----m--	Isaac	isaac
 isaacus	n-s---mn-	Isaacus	isaacus
 isacia	n-s---fb-	Isacia	Isacia_
@@ -402703,6 +402794,7 @@ istaec	p-p---na-	iste	istaec
 istaec	p-p---nn-	iste	istaec
 istam	p-s---fa-	iste	istam
 istanc	p-s---fa-	iste	istanc
+istacin	p-s---fb-	iste	ista_cin
 istarum	p-p---fg-	iste	ista_rum
 istas	p-p---fa-	iste	ista_s
 iste	p-s---mn-	iste	iste
@@ -403302,6 +403394,7 @@ itis	n-s---fg-	itis	itis
 itis	n-s---fn-	itis	itis
 itium	n-p---fg-	itis	itium
 ita	v2spma---	ito	i^ta_
+itan	d--------	ita	i^tan
 itabant	v3piia---	ito	i^ta_bant
 itabat	v3siia---	ito	i^ta_bat
 itantem	v-sppafa-	ito	i^tantem
@@ -406491,6 +406584,8 @@ ioco	n-s---mb-	jocus	jo^co_
 ioco	n-s---md-	jocus	jo^co_
 joco	n-s---mb-	jocus	jo^co_
 joco	n-s---md-	jocus	jo^co_
+iocon	n-s---mb-	jocus	jo^co_^n
+jocon	n-s---mb-	jocus	jo^co_^n
 iocorum	n-p---mg-	jocus	jo^co_rum
 iocorum	n-p---ng-	jocus	jo^co_rum
 jocorum	n-p---mg-	jocus	jo^co_rum
@@ -407058,7 +407153,9 @@ juberi	v--pnp---	jubeo	ju^be_ri_
 iuberis	v2spip---	jubeo	ju^be_ris
 juberis	v2spip---	jubeo	ju^be_ris
 iubes	v2spia---	jubeo	ju^be_s
+iuben	v2spia---	jubeo	ju^be_^n
 jubes	v2spia---	jubeo	ju^be_s
+juben	v2spia---	jubeo	ju^be_^n
 iubet	v3spia---	jubeo	ju^bet
 jubet	v3spia---	jubeo	ju^bet
 iubete	v2ppma---	jubeo	ju^be_te
@@ -412297,6 +412394,9 @@ juravisset	v3slsa---	juror	ju_ra_visset
 iurauisti	v2sria---	juror	ju_ra_visti_
 iuravisti	v2sria---	juror	ju_ra_visti_
 juravisti	v2sria---	juror	ju_ra_visti_
+iurauistin	v2sria---	juro	ju_ra_visti_n
+iuravistin	v2sria---	juro	ju_ra_visti_n
+juravistin	v2sria---	juro	ju_ra_visti_n
 iurauistis	v2pria---	juror	ju_ra_vistis
 iuravistis	v2pria---	juror	ju_ra_vistis
 juravistis	v2pria---	juror	ju_ra_vistis
@@ -412482,6 +412582,8 @@ iusse	n-s---nv-	jussum	jusse
 jusse	n-s---nv-	jussum	jusse
 iussi	n-s---ng-	jussum	jussi_
 jussi	n-s---ng-	jussum	jussi_
+iussin	v1sria---	jubeo	jussi_n
+jussin	v1sria---	jubeo	jussi_n
 iussis	n-p---nb-	jussum	jussi_s
 iussis	n-p---nd-	jussum	jussi_s
 jussis	n-p---nb-	jussum	jussi_s
@@ -433527,6 +433629,7 @@ lignea	a-p---nv-	ligneus	ligne^a
 lignea	a-s---fb-	ligneus	ligne^a_
 lignea	a-s---fn-	ligneus	ligne^a
 lignea	a-s---fv-	ligneus	ligne^a
+lignean	a-s---fb-	ligneus	ligne^a_n
 ligneae	a-p---fn-	ligneus	ligne^ae
 ligneae	a-p---fv-	ligneus	ligne^ae
 ligneae	a-s---fd-	ligneus	ligne^ae
@@ -447213,6 +447316,7 @@ magistratum	v-srppnv-	magistro	ma^gistra_tum
 magistratus	v-srppmn-	magistro	ma^gistra_tus
 magistrem	v1spsa---	magistro	ma^gistrem
 magistro	v1spia---	magistro	ma^gistro_
+magistron	n-s---md-	magister	ma^gistro_n
 magi	n-s---mg-	Magius	Magi_
 magi	n-s---mv-	Magius	Magi_
 magie	n-s---mv-	Magius	magie
@@ -450131,6 +450235,7 @@ mancipiis	n-p---nb-	mancipium	manci^pii_s
 mancipiis	n-p---nd-	mancipium	manci^pii_s
 mancipio	n-s---nb-	mancipium	manci^pio_
 mancipio	n-s---nd-	mancipium	manci^pio_
+mancupion	n-s---nb-	mancipium	mancu^pi^o_n
 mancipiorum	n-p---ng-	mancipium	manci^pio_rum
 mancipium	n-p---ng-	mancipium	manci^pium
 mancipium	n-s---na-	mancipium	manci^pium
@@ -459278,6 +459383,7 @@ meminissent	v3plsa---	memini	meminissent
 meminisses	v2slsa---	memini	meminisse_s
 meminisset	v3slsa---	memini	meminisset
 meministi	v2sria---	memini	meministi_
+meministin	v2sria---	memini	meministi_n
 meministis	v2pria---	memini	meministis
 meminit	v3sria---	memini	meminit
 memmiadae	n-p---mn-	Memmiades	Memmi^a^dae
@@ -461521,6 +461627,7 @@ mercatura	v-pfpanv-	mercor	merca_tu_ra
 mercatura	v-sfpafb-	mercor	merca_tu_ra_
 mercatura	v-sfpafn-	mercor	merca_tu_ra
 mercatura	v-sfpafv-	mercor	merca_tu_ra
+mercaturan	n-s---fb-	mercatura	merca_tu_ra_n
 mercaturae	v-pfpafn-	mercor	merca_tu_rae
 mercaturae	v-pfpafv-	mercor	merca_tu_rae
 mercaturae	v-sfpafd-	mercor	merca_tu_rae
@@ -464415,6 +464522,10 @@ mea	a-p---nv-	meus	me^a
 mea	a-s---fb-	meus	me^a_
 mea	a-s---fn-	meus	me^a
 mea	a-s---fv-	meus	me^a
+mean	a-s---fb-	meus	me^a_^n
+mean	a-p---na-	meus	me^an
+mean	a-p---nn-	meus	me^an
+mean	a-s---fn-	meus	me^an
 meae	a-p---fn-	meus	me^ae
 meae	a-p---fv-	meus	me^ae
 meae	a-s---fd-	meus	me^ae
@@ -464430,6 +464541,8 @@ mei	a-p---mn-	meus	me^i_
 mei	a-p---mv-	meus	me^i_
 mei	a-s---mg-	meus	me^i_
 mei	a-s---ng-	meus	me^i_
+mein	p-s---fg-	ego	mei_^n
+mein	p-s---mg-	ego	mei_^n
 meiores	a-p---fac	meus	me^io_re_s
 meiores	a-p---fnc	meus	me^io_re_s
 meiores	a-p---fvc	meus	me^io_re_s
@@ -469809,6 +469922,7 @@ mittier	v--pnp---	mitto	mittier
 mittimur	v1ppip---	mitto	mittimur
 mittimus	v1ppia---	mitto	mittimus
 mittis	v2spia---	mitto	mittis
+mittin	v2spia---	mitto	mittin
 mittit	v3spia---	mitto	mittit
 mittite	v2ppma---	mitto	mittite
 mittitis	v2ppia---	mitto	mittitis
@@ -469841,6 +469955,8 @@ mittunt	v3ppia---	mitto	mittunt
 mittuntur	v3ppip---	mitto	mittuntur
 mi	a-s---mg-	mius	mi_
 mi	a-s---ng-	mius	mi_
+min	p-s---fd-	ego	mi_n
+min	p-s---md-	ego	mi_n
 mia	a-p---na-	mius	mia
 mia	a-p---nn-	mius	mia
 mia	a-p---nv-	mius	mia
@@ -487421,6 +487537,7 @@ negabit	v3sfia---	nego	ne^ga_bit
 negabitis	v2pfia---	nego	ne^ga_bitis
 negabitur	v3sfip---	nego	ne^ga_bitur
 negabo	v1sfia---	nego	ne^ga_bo_
+negabon	v1sfia---	nego	ne^ga_bo_n
 negabunt	v3pfia---	nego	ne^ga_bunt
 negamur	v1ppip---	nego	ne^ga_mur
 negamus	v1ppia---	nego	ne^ga_mus
@@ -488085,6 +488202,8 @@ neminis	n-s---fg-	nemo	ne_minis
 neminis	n-s---mg-	nemo	ne_minis
 nemo	n-s---fn-	nemo	ne_mo_
 nemo	n-s---mn-	nemo	ne_mo_
+nemon	n-s---fn-	nemo	ne_mo_n
+nemon	n-s---mn-	nemo	ne_mo_n
 nemorale	a-s---na-	nemoralis	ne^mo^ra_le
 nemorale	a-s---nn-	nemoralis	ne^mo^ra_le
 nemorale	a-s---nv-	nemoralis	ne^mo^ra_le
@@ -488675,6 +488794,7 @@ nequeant	v3ppsa---	nequeo	nequeant
 nequeas	v2spsa---	nequeo	nequea_s
 nequeat	v3spsa---	nequeo	nequeat
 nequeo	v1spia---	nequeo	nequeo_
+nequeon	v1spia---	nequeo	nequeo_n
 nequeunt	v3ppia---	nequeo	nequeunt
 nequibam	v1siia---	nequeo	nequi_bam
 nequibant	v3piia---	nequeo	nequi_bant
@@ -494028,6 +494148,8 @@ nouissetis	v2plsa---	nosco	no_visse_tis
 novissetis	v2plsa---	nosco	no_visse_tis
 nouisti	v2sria---	nosco	no_visti_
 novisti	v2sria---	nosco	no_visti_
+nouistin	v2sria---	nosco	no_visti_n
+novistin	v2sria---	nosco	no_visti_n
 nouistis	v2pria---	nosco	no_vistis
 novistis	v2pria---	nosco	no_vistis
 nouit	v3sria---	nosco	no_vit
@@ -494088,6 +494210,7 @@ nostius	n-s---mn-	Nostius	nostius
 nosti	n-p---mn-	Nostos	Nosti_
 nosti	n-p---mv-	Nostos	Nosti_
 nosti	n-s---mg-	Nostos	Nosti_
+nostin	v2sria---	nosco	no_sti_n
 nostis	n-p---mb-	Nostos	Nosti_s
 nostis	n-p---md-	Nostos	Nosti_s
 nostorum	n-p---mg-	Nostos	Nosto_rum
@@ -496221,6 +496344,8 @@ novi	a-p---mn-	novus	no^vi_
 novi	a-p---mv-	novus	no^vi_
 novi	a-s---mg-	novus	no^vi_
 novi	a-s---ng-	novus	no^vi_
+nouin	v1sria---	nosco	no_vi_n
+novin	v1sria---	nosco	no_vi_n
 nouiorum	a-p---fgc	novus	no^vio_rum
 nouiorum	a-p---mgc	novus	no^vio_rum
 nouiorum	a-p---ngc	novus	no^vio_rum
@@ -497277,6 +497402,7 @@ nulla	a-p---nv-	nullus	nu_lla
 nulla	a-s---fb-	nullus	nu_lla_
 nulla	a-s---fn-	nullus	nu_lla
 nulla	a-s---fv-	nullus	nu_lla
+nullan	a-s---fn-	nullus	nu_llan
 nullae	a-p---fn-	nullus	nu_llae
 nullae	a-p---fv-	nullus	nu_llae
 nullae	a-s---fd-	nullus	nu_llae
@@ -497308,6 +497434,7 @@ nullo	a-s---mb-	nullus	nu_llo_
 nullo	a-s---md-	nullus	nu_llo_
 nullo	a-s---nb-	nullus	nu_llo_
 nullo	a-s---nd-	nullus	nu_llo_
+nullon	a-s---nb-	nullus	nu_llo_n
 nullorum	a-p---mg-	nullus	nu_llo_rum
 nullorum	a-p---ng-	nullus	nu_llo_rum
 nullos	a-p---ma-	nullus	nu_llo_s
@@ -498162,6 +498289,7 @@ numquam	d--------	numquam	numquam
 nunquam	d--------	numquam	nunquam
 numquid	d--------	numquid	numquid
 nunc	d--------	nunc	nunc
+nuncin	d--------	nunc	nuncin
 nuncia	n-s---fb-	nuncia	nu_nci^a_
 nuncia	n-s---fn-	nuncia	nu_nci^a
 nuncia	n-s---fv-	nuncia	nu_nci^a
@@ -498834,6 +498962,7 @@ nupta	a-p---nv-	nuptus	nu_pta
 nupta	a-s---fb-	nuptus	nu_pta_
 nupta	a-s---fn-	nuptus	nu_pta
 nupta	a-s---fv-	nuptus	nu_pta
+nuptan	v-srppfn-	nubo	nu_ptan
 nuptae	a-p---fn-	nuptus	nu_ptae
 nuptae	a-p---fv-	nuptus	nu_ptae
 nuptae	a-s---fd-	nuptus	nu_ptae
@@ -513805,6 +513934,7 @@ offirmare	v2spmp---	offirmo	offirma_re
 offirmari	v--pnp---	offirmo	offirma_ri_
 offirmas	v2spia---	offirmo	offirma_s
 offirmasti	v2sria---	offirmo	offirma_sti_
+offirmastin	v2sria---	offirmo	offirma_sti_n
 offirmastis	v2pria---	offirmo	offirma_stis
 offirmate	d--------	offirmo	offirma_te_
 offirmate	v-srppmv-	offirmo	offirma_te
@@ -515722,6 +515852,8 @@ omni	a-s---nd-	omnis	omni_
 omnia	a-p---na-	omnis	omnia
 omnia	a-p---nn-	omnis	omnia
 omnia	a-p---nv-	omnis	omnia
+omnian	a-p---na-	omnis	omnian
+omnian	a-p---nn-	omnis	omnian
 omnibus	a-p---fb-	omnis	omnibus
 omnibus	a-p---fd-	omnis	omnibus
 omnibus	a-p---mb-	omnis	omnibus
@@ -516570,6 +516702,10 @@ opertae	v-prppfn-	operio	o^pertae
 opertae	v-prppfv-	operio	o^pertae
 opertae	v-srppfd-	operio	o^pertae
 opertae	v-srppfg-	operio	o^pertae
+opertaen	v-prppfn-	operio	o^pertaen
+opertaen	v-prppfv-	operio	o^pertaen
+opertaen	v-srppfd-	operio	o^pertaen
+opertaen	v-srppfg-	operio	o^pertaen
 opertam	v-srppfa-	operio	o^pertam
 opertarum	v-prppfg-	operio	o^perta_rum
 opertas	v-prppfa-	operio	o^perta_s
@@ -529727,6 +529863,7 @@ pacto	v-srppmb-	pango	pa_cto_
 pacto	v-srppmd-	pango	pa_cto_
 pacto	v-srppnb-	pango	pa_cto_
 pacto	v-srppnd-	pango	pa_cto_
+pacton	n-s---nb-	pactum	pacto_n
 pactorum	v-prppmg-	pango	pa_cto_rum
 pactorum	v-prppng-	pango	pa_cto_rum
 pactos	v-prppma-	pango	pa_cto_s
@@ -536865,6 +537002,7 @@ patientius	v-s---nvc	patior	pa^tientius
 patientur	v3pfip---	patior	pa^tientur
 patiere	v2sfip---	patior	pa^tie_re
 patieris	v2sfip---	patior	pa^tie_ris
+patierin	v2sfip---	patior	pa^tie_rin
 paties	v2sfia---	patior	pa^tie_s
 patietur	v3sfip---	patior	pa^tie_tur
 patimini	v2ppip---	patior	pa^timini_
@@ -542649,6 +542787,7 @@ peniculi	n-p---mv-	peniculus	pe_ni^cu^li_
 peniculi	n-s---mg-	peniculus	pe_ni^cu^li_
 peniculo	n-s---mb-	peniculus	pe_ni^cu^lo_
 peniculo	n-s---md-	peniculus	pe_ni^cu^lo_
+peniculon	n-s---mb-	peniculus	pe_ni^cu^lo_n
 peniculos	n-p---ma-	peniculus	pe_ni^cu^lo_s
 peniculum	n-p---mg-	peniculus	pe_ni^cu^lum
 peniculum	n-s---ma-	peniculus	pe_ni^cu^lum
@@ -546102,6 +546241,7 @@ perdidisses	v2slsa---	perdo	perdi^disse_s
 perdidisset	v3slsa---	perdo	perdi^disset
 perdidissetis	v2plsa---	perdo	perdi^disse_tis
 perdidisti	v2sria---	perdo	perdi^disti_
+perdidistin	v2sria---	perdo	perdi^disti_n
 perdidistis	v2pria---	perdo	perdi^distis
 perdidit	v3sria---	perdo	perdi^dit
 perdimus	v1ppia---	perdo	perdimus
@@ -546390,6 +546530,7 @@ perdomuisti	v2sria---	perdomo	perdo^muisti_
 perdomuit	v3sria---	perdomo	perdo^muit
 perdormisci	v--pnp---	perdormisco	perdormi_sci_
 perdormiscis	v2spia---	perdormisco	perdormi_scis
+perdormiscin	v2spia---	perdormisco	perdormi_scin
 perdormisco	v1spia---	perdormisco	perdormi_sco_
 perduc	v2spma---	perduco	perdu_c
 perducam	v1sfia---	perduco	perdu_cam
@@ -549128,9 +549269,11 @@ pergetis	v2pfia---	pergo	perge_tis
 pergi	v--pnp---	pergo	pergi_
 pergimus	v1ppia---	pergo	pergimus
 pergis	v2spia---	pergo	pergis
+pergin	v2spia---	pergo	pergin
 pergit	v3spia---	pergo	pergit
 pergite	v2ppma---	pergo	pergite
 pergitis	v2ppia---	pergo	pergitis
+pergitin	v2ppia---	pergo	pergitin
 pergito	v2sfma---	pergo	pergito_
 pergito	v3sfma---	pergo	pergito_
 pergitur	v3spip---	pergo	pergitur
@@ -553926,6 +554069,7 @@ perpetuas	a-p---fa-	perpetuus	perpe^tu^a_s
 perpetue	a-s---mv-	perpetuus	perpe^tu^e
 perpetue	a-s---nv-	perpetuus	perpe^tu^e
 perpetue	d--------	perpetuus	perpe^tu^e_
+perpetuen	d--------	perpetuus	perpe^tu^e_n
 perpetui	a-p---mn-	perpetuus	perpe^tu^i_
 perpetui	a-p---mv-	perpetuus	perpe^tu^i_
 perpetui	a-s---mg-	perpetuus	perpe^tu^i_
@@ -569670,6 +569814,7 @@ planas	a-p---fa-	planus	pla_na_s
 plane	a-s---mv-	planus	pla_ne
 plane	a-s---nv-	planus	pla_ne
 plane	d--------	planus	pla_ne_
+planen	d--------	planus	pla_ne_n
 plani	a-p---mn-	planus	pla_ni_
 plani	a-p---mv-	planus	pla_ni_
 plani	a-s---mg-	planus	pla_ni_
@@ -577920,6 +578065,7 @@ possim	v1spsa---	possum	possim
 possimus	v1ppsa---	possum	possi_mus
 possint	v3ppsa---	possum	possint
 possis	v2spsa---	possum	possi_s
+possin	v2spsa---	possum	possi_n
 possit	v3spsa---	possum	possit
 possitis	v2ppsa---	possum	possi_tis
 possum	v1spia---	possum	possum
@@ -579588,6 +579734,9 @@ potiorum	a-p---mgc	potis	potio_rum
 potiorum	a-p---ngc	potis	potio_rum
 potis	a-s---fn-	potis	potis
 potis	a-s---mn-	potis	potis
+potin	a-s---fn-	potis	potin
+potin	a-s---mn-	potis	potin
+potin	a-s---nn-	potis	potin
 potissima	a-p---nas	potis	potissima
 potissima	a-p---nns	potis	potissima
 potissima	a-p---nvs	potis	potissima
@@ -579894,6 +580043,7 @@ potent	v3ppsa---	poto	po_tent
 potentur	v3ppsp---	poto	po_tentur
 poter	v1spsp---	poto	po_ter
 poteris	v2spsp---	poto	po_te_ris
+poterin	v2sfia---	possum	poterin
 potes	v2spsa---	poto	po_te_s
 potet	v3spsa---	poto	po_tet
 potetis	v2ppsa---	poto	po_te_tis
@@ -580224,6 +580374,7 @@ praeberetur	v3sisp---	praebeo	praebe_re_tur
 praeberi	v--pnp---	praebeo	praebe_ri_
 praeberier	v--pnp---	praebeo	praebe_rier
 praebes	v2spia---	praebeo	praebe_s
+praeben	v2spia---	praebeo	praebe_n
 praebet	v3spia---	praebeo	praebet
 praebete	v2ppma---	praebeo	praebe_te
 praebetis	v2ppia---	praebeo	praebe_tis
@@ -603213,6 +603364,8 @@ promisissent	v3plsa---	promitto	pro_mi_sissent
 promisisses	v2slsa---	promitto	pro_mi_sisse_s
 promisisset	v3slsa---	promitto	pro_mi_sisset
 promisisti	v2sria---	promitto	pro_mi_sisti_
+promistin	v2sria---	promitto	pro_mi_sti_n
+promisistin	v2sria---	promitto	pro_mi_sisti_n
 promisistis	v2pria---	promitto	pro_mi_sistis
 promisit	v3sria---	promitto	pro_mi_sit
 promissa	v-prppna-	promitto	pro_missa
@@ -605059,6 +605212,7 @@ properatis	v-prppmd-	propero	pro^pe^ra_ti_s
 properatis	v-prppnb-	propero	pro^pe^ra_ti_s
 properatis	v-prppnd-	propero	pro^pe^ra_ti_s
 properatis	v2ppia---	propero	pro^pe^ra_tis
+properatin	v2ppia---	propero	pro^pe^ra_tin
 properato	v-srppmb-	propero	pro^pe^ra_to_
 properato	v-srppmd-	propero	pro^pe^ra_to_
 properato	v-srppnb-	propero	pro^pe^ra_to_
@@ -621538,12 +621692,19 @@ quodlibet	p-s---nn-	qui2	quodlibet
 quoi	p-s---fd-	qui2	quoi
 quoi	p-s---md-	qui2	quoi
 quoi	p-s---nd-	qui2	quoi
+quoin	p-s---fd-	qui	quoin
+quoin	p-s---fd-	qui2	quoin
+quoin	p-s---md-	qui	quoin
+quoin	p-s---md-	qui2	quoin
+quoin	p-s---nd-	qui	quoin
+quoin	p-s---nd-	qui2	quoin
 quorum	p-p---mg-	qui2	quo_rum
 quorumlibet	p-p---mg-	qui2	quo_rumlibet
 quos	p-p---ma-	qui2	quo_s
 quoslibet	p-p---ma-	qui2	quo_slibet
 quum	p-p---mg-	qui2	quum
 quia	c--------	quia	quia
+quian	c--------	quia	quian
 cuicumque	p-s---fd-	quicumque	cuicumque
 cuicumque	p-s---md-	quicumque	cuicumque
 cuicumque	p-s---nd-	quicumque	cuicumque
@@ -623236,6 +623397,20 @@ qua	p-s---fn-	quis2	qua
 quae	p-p---fn-	quis2	quae
 quae	p-p---na-	quis2	quae
 quae	p-p---nn-	quis2	quae
+quaen	p-p---fn-	qui	quaen
+quaen	p-p---fn-	qui2	quaen
+quaen	p-p---fn-	quis	quaen
+quaen	p-p---fn-	quis2	quaen
+quaen	p-p---na-	qui	quaen
+quaen	p-p---na-	qui2	quaen
+quaen	p-p---na-	quis	quaen
+quaen	p-p---na-	quis2	quaen
+quaen	p-p---nn-	qui	quaen
+quaen	p-p---nn-	qui2	quaen
+quaen	p-p---nn-	quis	quaen
+quaen	p-p---nn-	quis2	quaen
+quaen	p-s---fn-	qui	quaen
+quaen	p-s---fn-	qui2	quaen
 quaelibet	p-p---fn-	quis2	quaelibet
 quaelibet	p-p---na-	quis2	quaelibet
 quaelibet	p-p---nn-	quis2	quaelibet
@@ -623251,6 +623426,7 @@ quem	p-s---ma-	quis2	quem
 quemlibet	p-s---fa-	quis2	quemlibet
 quemlibet	p-s---ma-	quis2	quemlibet
 qui	p-p---mn-	quis2	qui_
+quin	p-s---mn-	qui2	qui_n
 quibus	p-p---fb-	quis2	quibus
 quibus	p-p---fd-	quis2	quibus
 quibus	p-p---mb-	quis2	quibus
@@ -623543,6 +623719,7 @@ quiza	n-s---fb-	Quiza	Quiza_
 quiza	n-s---fn-	Quiza	quiza
 quiza	n-s---fv-	Quiza	quiza
 quo	d--------	quo	quo_
+quon	d--------	quo	quo_n
 quaad	d--------	quoad	quaad
 quoad	d--------	quoad	quo^ad
 quocirca	c--------	quocirca	quo_circa_
@@ -630346,6 +630523,7 @@ reddidistis	v2pria---	reddo	reddi^distis
 reddidit	v3sria---	reddo	reddi^dit
 reddimus	v1ppia---	reddo	reddimus
 reddis	v2spia---	reddo	reddis
+reddin	v2spia---	reddo	reddin
 reddit	v3spia---	reddo	reddit
 reddita	v-prppna-	reddo	reddi^ta
 reddita	v-prppnn-	reddo	reddi^ta
@@ -630534,6 +630712,7 @@ rediret	v3sisa---	redeo	re^di_ret
 rediretur	v3sisp---	redeo	re^di_re_tur
 rediri	v--pnp---	redeo	re^di_ri_
 redis	v2spia---	redeo	re^di_s
+redin	v2spia---	redeo	re^di_^n
 redit	v3spia---	redeo	re^dit
 redite	d--------	redeo	re^di^te_
 redite	v-srppmv-	redeo	re^di^te
@@ -631309,6 +631488,7 @@ redducta	v-prppnv-	reduco	redducta
 redducta	v-srppfb-	reduco	redducta_
 redducta	v-srppfn-	reduco	redducta
 redducta	v-srppfv-	reduco	redducta
+redductan	v-srppfb-	reduco	re^dducta_n
 redductas	v-prppfa-	reduco	redducta_s
 redductum	v-prppmg-	reduco	redductum
 redductum	v-prppng-	reduco	redductum
@@ -634514,6 +634694,8 @@ rectas	v-prppfa-	rego	re_cta_s
 recte	d--------	rego	re_cte_
 recte	v-srppmv-	rego	re_cte
 recte	v-srppnv-	rego	re_cte
+recten	d--------	rectus	re_cte_n
+recten	d--------	rego	re_cte_n
 recti	v-prppmn-	rego	re_cti_
 recti	v-prppmv-	rego	re_cti_
 recti	v-srppmg-	rego	re_cti_
@@ -639420,6 +639602,7 @@ ratum	v-srppna-	reor	ra^tum
 ratum	v-srppnn-	reor	ra^tum
 ratum	v-srppnv-	reor	ra^tum
 ratus	v-srppmn-	reor	ra^tus
+ratun	v-srppmn-	reor	ra^tun
 re	v2spma---	reor	re_
 ream	v1spsa---	reor	ream
 reamur	v1ppsp---	reor	rea_mur
@@ -639505,6 +639688,7 @@ rerent	v3pisa---	reor	re_rent
 reretur	v3sisp---	reor	re_re_tur
 reri	v--pnp---	reor	re_ri_
 reris	v2spip---	reor	re_ris
+rerin	v2spip---	reor	re_rin
 res	v2spia---	reor	re_s
 ret	v3spia---	reor	ret
 rete	v2ppma---	reor	re_te
@@ -663328,6 +663512,8 @@ salva	a-p---nv-	salvus	salva
 salva	a-s---fb-	salvus	salva_
 salva	a-s---fn-	salvus	salva
 salva	a-s---fv-	salvus	salva
+saluan	a-s---fn-	salvus	salvan
+salvan	a-s---fn-	salvus	salvan
 saluae	a-p---fn-	salvus	salvae
 saluae	a-p---fv-	salvus	salvae
 saluae	a-s---fd-	salvus	salvae
@@ -663346,6 +663532,8 @@ salue	d--------	salvus	salve_
 salve	a-s---mv-	salvus	salve
 salve	a-s---nv-	salvus	salve
 salve	d--------	salvus	salve_
+saluen	d--------	salve	salve_n
+salven	d--------	salve	salve_n
 salui	a-p---mn-	salvus	salvi_
 salui	a-p---mv-	salvus	salvi_
 salui	a-s---mg-	salvus	salvi_
@@ -664771,6 +664959,7 @@ sana	a-p---nv-	sanus	sa_na
 sana	a-s---fb-	sanus	sa_na_
 sana	a-s---fn-	sanus	sa_na
 sana	a-s---fv-	sanus	sa_na
+sanan	a-s---fn-	sanus	sa_nan
 sanae	a-p---fn-	sanus	sa_nae
 sanae	a-p---fv-	sanus	sa_nae
 sanae	a-s---fd-	sanus	sa_nae
@@ -664848,6 +665037,7 @@ sanum	a-s---na-	sanus	sa_num
 sanum	a-s---nn-	sanus	sa_num
 sanum	a-s---nv-	sanus	sa_num
 sanus	a-s---mn-	sanus	sa_nus
+sanun	a-s---mn-	sanus	sa_nun
 saoce	n-s---mb-	Saoces	Sa^o_ce
 saoces	n-p---ma-	Saoces	Sa^o_ce_s
 saoces	n-p---mn-	Saoces	Sa^o_ce_s
@@ -669602,6 +669792,7 @@ sciri	v--pnp---	scio	sci_ri_
 sciris	v2spip---	scio	sci_ris
 sciris	v2srsa---	scio	sci_ri_s
 scis	v2spia---	scio	sci_s
+scin	v2spia---	scio	sci_n
 scisse	v--rna---	scio	sci_sse
 scissem	v1slsa---	scio	sci_ssem
 scissemus	v1plsa---	scio	sci_sse_mus
@@ -670115,6 +670306,8 @@ sciuerunt	v3pria---	scisco	sci_ve_runt
 sciverunt	v3pria---	scisco	sci_ve_runt
 sciui	v1sria---	scisco	sci_vi_
 scivi	v1sria---	scisco	sci_vi_
+sciuin	v1sria---	scio	sci_vi_n
+scivin	v1sria---	scio	sci_vi_n
 sciuimus	v1pria---	scisco	sci_vimus
 scivimus	v1pria---	scisco	sci_vimus
 sciuisse	v--rna---	scisco	sci_visse
@@ -670269,6 +670462,7 @@ scite	n-s---nv-	scitum	sci_te
 sciti	n-s---ng-	scitum	sci_ti_
 scitis	n-p---nb-	scitum	sci_ti_s
 scitis	n-p---nd-	scitum	sci_ti_s
+scitin	v2ppia---	scio	sci_tin
 scito	n-s---nb-	scitum	sci_to_
 scito	n-s---nd-	scitum	sci_to_
 scitum	n-p---ng-	scitum	sci_tum
@@ -678139,6 +678333,7 @@ sensissent	v3plsa---	sentio	se_nsissent
 sensisses	v2slsa---	sentio	se_nsisse_s
 sensisset	v3slsa---	sentio	se_nsisset
 sensisti	v2sria---	sentio	se_nsisti_
+sensistin	v2sria---	sentio	sensisti_n
 sensistis	v2pria---	sentio	se_nsistis
 sensit	v3sria---	sentio	se_nsit
 sensorum	v-prppmg-	sentio	se_nso_rum
@@ -678334,6 +678529,7 @@ sentis	a-p---mb-	sentus	senti_s
 sentis	a-p---md-	sentus	senti_s
 sentis	a-p---nb-	sentus	senti_s
 sentis	a-p---nd-	sentus	senti_s
+sentin	v2spia---	sentio	senti_n
 sentius	a-s---nac	sentus	sentius
 sentius	a-s---nnc	sentus	sentius
 sentius	a-s---nvc	sentus	sentius
@@ -682148,6 +682344,8 @@ seruio	v1spia---	servio	servio_
 servio	v1spia---	servio	servio_
 seruire	v--pna---	servio	servi_re
 servire	v--pna---	servio	servi_re
+seruiren	v--pna---	servio	servi_ren
+serviren	v--pna---	servio	servi_ren
 seruirem	v1sisa---	servio	servi_rem
 servirem	v1sisa---	servio	servi_rem
 seruiremus	v1pisa---	servio	servi_re_mus
@@ -683066,9 +683264,13 @@ serve	n-s---mv-	servus2	serve
 serui	n-p---mn-	servus2	servi_
 serui	n-p---mv-	servus2	servi_
 serui	n-s---mg-	servus2	servi_
+seruon	n-s---mn-	servus2	servon
 servi	n-p---mn-	servus2	servi_
 servi	n-p---mv-	servus2	servi_
 servi	n-s---mg-	servus2	servi_
+seruin	n-p---mn-	servus2	servi_n
+servin	n-p---mn-	servus2	servi_n
+servon	n-s---mn-	servus2	servon
 seruis	n-p---mb-	servus2	servi_s
 seruis	n-p---md-	servus2	servi_s
 servis	n-p---mb-	servus2	servi_s
@@ -683077,6 +683279,8 @@ seruo	n-s---mb-	servus2	servo_
 seruo	n-s---md-	servus2	servo_
 servo	n-s---mb-	servus2	servo_
 servo	n-s---md-	servus2	servo_
+seruon	n-s---md-	servus2	servo_n
+servon	n-s---md-	servus2	servo_n
 seruom	n-s---ma-	servus2	servom
 servom	n-s---ma-	servus2	servom
 seruorum	n-p---mg-	servus2	servo_rum
@@ -685283,6 +685487,7 @@ sicimina	n-s---fn-	Sicimina	sicimina
 sicimina	n-s---fv-	Sicimina	sicimina
 siciminam	n-s---fa-	Sicimina	siciminam
 sicine	d--------	sicine	si_ci^ne
+sicin	d--------	sicine	si_cin
 sicini	n-s---mg-	Sicinius	Sicini_
 sicini	n-s---mv-	Sicinius	Sicini_
 sicinio	n-s---mb-	Sicinius	Sicinio_
@@ -698152,6 +698357,7 @@ sponderent	v3pisa---	spondeo	sponde_rent
 sponderet	v3sisa---	spondeo	sponde_ret
 sponderi	v--pnp---	spondeo	sponde_ri_
 spondes	v2spia---	spondeo	sponde_s
+sponden	v2spia---	spondeo	sponde_n
 spondet	v3spia---	spondeo	spondet
 spondetis	v2ppia---	spondeo	sponde_tis
 spondetur	v3spip---	spondeo	sponde_tur
@@ -702490,6 +702696,7 @@ statis	v-prppmd-	sto	sta^ti_s
 statis	v-prppnb-	sto	sta^ti_s
 statis	v-prppnd-	sto	sta^ti_s
 statis	v2ppia---	sto	sta_tis
+statin	v2ppia---	sto	sta_tin
 statius	a-s---nac	sto	sta^tius
 statius	a-s---nnc	sto	sta^tius
 statius	a-s---nvc	sto	sta^tius
@@ -717895,6 +718102,7 @@ fuisses	v2slsa---	sum	fuisse_s
 fuisset	v3slsa---	sum	fuisset
 fuissetis	v2plsa---	sum	fuisse_tis
 fuisti	v2sria---	sum	fuisti_
+fuistin	v2sria---	sum	fuisti_n
 fuistis	v2pria---	sum	fuistis
 fuit	v3sria---	sum	fuit
 futura	v-pfpana-	sum	futu_ra
@@ -723739,6 +723947,7 @@ surrupui	v1sria---	surripio	surrupui_
 surrupuisse	v--rna---	surripio	surrupuisse
 surrupuisset	v3slsa---	surripio	surrupuisset
 surrupuisti	v2sria---	surripio	surrupuisti_
+surrupuistin	v2sria---	surripio	surrupuisti_n
 surrupuistis	v2pria---	surripio	surrupuistis
 surrupuit	v3sria---	surripio	surrupuit
 surrogo	v1spia---	surrogo	surro^go_
@@ -727504,6 +727713,7 @@ taceret	v3sisa---	taceo	ta^ce_ret
 taceretur	v3sisp---	taceo	ta^ce_re_tur
 taceri	v--pnp---	taceo	ta^ce_ri_
 taces	v2spia---	taceo	ta^ce_s
+tacen	v2spia---	taceo	ta^ce_^n
 tacet	v3spia---	taceo	ta^cet
 tacete	v2ppma---	taceo	ta^ce_te
 tacetis	v2ppia---	taceo	ta^ce_tis
@@ -728365,6 +728575,9 @@ tale	n-s---mv-	talus	ta_le
 tali	n-p---mn-	talus	ta_li_
 tali	n-p---mv-	talus	ta_li_
 tali	n-s---mg-	talus	ta_li_
+talin	a-s---fb-	talis	ta_li_n
+talin	a-s---fd-	talis	ta_li_n
+talin	a-s---nd-	talis	ta_li_n
 talis	n-p---mb-	talus	ta_li_s
 talis	n-p---md-	talus	ta_li_s
 talo	n-s---mb-	talus	ta_lo_
@@ -728679,12 +728892,14 @@ tetigerit	v3stia---	tango	te^ti^gerit
 tetigero	v1stia---	tango	te^ti^gero_
 tetigerunt	v3pria---	tango	te^ti^ge_runt
 tetigi	v1sria---	tango	te^ti^gi_
+tetigin	v1sria---	tango	te^ti^gi_n
 tetigimus	v1pria---	tango	te^ti^gimus
 tetigisse	v--rna---	tango	te^ti^gisse
 tetigissem	v1slsa---	tango	te^ti^gissem
 tetigissent	v3plsa---	tango	te^ti^gissent
 tetigisset	v3slsa---	tango	te^ti^gisset
 tetigisti	v2sria---	tango	te^ti^gisti_
+tetigistin	v2sria---	tango	te^ti^gisti_n
 tetigistis	v2pria---	tango	te^ti^gistis
 tetigit	v3sria---	tango	te^ti^git
 tannetani	n-p---mn-	Tannetani	Tanne_ta_ni_
@@ -728853,6 +729068,7 @@ tanto	a-s---mb-	tantus	tanto_
 tanto	a-s---md-	tantus	tanto_
 tanto	a-s---nb-	tantus	tanto_
 tanto	a-s---nd-	tantus	tanto_
+tanton	a-s---nb-	tantus	tanto_n
 tantorum	a-p---mg-	tantus	tanto_rum
 tantorum	a-p---ng-	tantus	tanto_rum
 tantos	a-p---ma-	tantus	tanto_s
@@ -754431,6 +754647,10 @@ te	p-s---fa-	tu	te_
 te	p-s---fb-	tu	te_
 te	p-s---ma-	tu	te_
 te	p-s---mb-	tu	te_
+ten	p-s---fa-	tu	te_n
+ten	p-s---fb-	tu	te_n
+ten	p-s---ma-	tu	te_n
+ten	p-s---mb-	tu	te_n
 tecum	p-s---fb-	tu	te_cum
 tecum	p-s---mb-	tu	te_cum
 ted	p-s---fa-	tu	te_d
@@ -754449,6 +754669,8 @@ tu	p-s---fn-	tu	tu_
 tu	p-s---fv-	tu	tu_
 tu	p-s---mn-	tu	tu_
 tu	p-s---mv-	tu	tu_
+tun	p-s---fn-	tu	tu_n
+tun	p-s---mn-	tu	tu_n
 tui	p-s---fg-	tu	tui_
 tui	p-s---mg-	tu	tui_
 tute	p-s---fn-	tu	tu_te
@@ -757706,6 +757928,8 @@ tuta	n-p---na-	tutum	tu_ta
 tuta	n-p---nn-	tutum	tu_ta
 tuta	n-p---nv-	tutum	tu_ta
 tute	n-s---nv-	tutum	tu_te
+tutin	p-s---fn-	tu	tu_tin
+tutin	p-s---mn-	tu	tu_tin
 tuti	n-s---ng-	tutum	tu_ti_
 tutis	n-p---nb-	tutum	tu_ti_s
 tutis	n-p---nd-	tutum	tu_ti_s
@@ -757722,10 +757946,15 @@ tua	a-p---nv-	tuus	tu^a
 tua	a-s---fb-	tuus	tu^a_
 tua	a-s---fn-	tuus	tu^a
 tua	a-s---fv-	tuus	tu^a
+tuan	a-s---fb-	tuus	tu^a_^n
 tuae	a-p---fn-	tuus	tu^ae
 tuae	a-p---fv-	tuus	tu^ae
 tuae	a-s---fd-	tuus	tu^ae
 tuae	a-s---fg-	tuus	tu^ae
+tuaen	a-p---fn-	tuus	tu^aen
+tuaen	a-p---fv-	tuus	tu^aen
+tuaen	a-s---fd-	tuus	tu^aen
+tuaen	a-s---fg-	tuus	tu^aen
 tuam	a-s---fa-	tuus	tu^am
 tuarum	a-p---fg-	tuus	tu^a_rum
 tuas	a-p---fa-	tuus	tu^a_s
@@ -757736,6 +757965,7 @@ tui	a-p---mn-	tuus	tu^i_
 tui	a-p---mv-	tuus	tu^i_
 tui	a-s---mg-	tuus	tu^i_
 tui	a-s---ng-	tuus	tu^i_
+tuin	a-s---mg-	tuus	tu^i_^n
 tuis	a-p---fb-	tuus	tu^i_s
 tuis	a-p---fd-	tuus	tu^i_s
 tuis	a-p---mb-	tuus	tu^i_s
@@ -757746,6 +757976,7 @@ tuo	a-s---mb-	tuus	tu^o_
 tuo	a-s---md-	tuus	tu^o_
 tuo	a-s---nb-	tuus	tu^o_
 tuo	a-s---nd-	tuus	tu^o_
+tuon	a-s---mb-	tuus	tu^o_^n
 tuom	a-s---ma-	tuus	tu^om
 tuom	a-s---na-	tuus	tu^om
 tuom	a-s---nn-	tuus	tu^om
@@ -762552,6 +762783,7 @@ uspensium	n-p---mg-	Uspenses	uspe_nsium
 uspiam	d--------	uspiam	uspi^am
 usquam	d--------	usquam	usquam
 usque	d--------	usque	usque^
+usquin	d--------	usque	usquin
 usta	n-s---fb-	usta	usta_
 usta	n-s---fn-	usta	usta
 usta	n-s---fv-	usta	usta
@@ -763001,6 +763233,7 @@ usus	n-s---mg-	usus2	u_su_s
 usus	n-s---mn-	usus2	u_sus
 usuum	n-p---mg-	usus2	u_su^um
 ut	d--------	ut	ut
+utin	d--------	ut	utin
 utcumque	c--------	utcumque	utcumque
 utcumque	d--------	utcumque	utcumque
 utcunque	c--------	utcumque	utcunque
@@ -763935,6 +764168,7 @@ uxorium	n-s---nn-	uxorium	uxo_rium
 uxorium	n-s---nv-	uxorium	uxo_rium
 uxori	a-s---mg-	uxorius	uxo_ri_
 uxori	a-s---ng-	uxorius	uxo_ri_
+uxorin	n-s---fd-	uxor	uxo_ri_n
 uxoria	a-p---na-	uxorius	uxo_ria
 uxoria	a-p---nn-	uxorius	uxo_ria
 uxoria	a-p---nv-	uxorius	uxo_ria
@@ -766650,6 +766884,8 @@ ualeri	v--pnp---	valeo	va^le_ri_
 valeri	v--pnp---	valeo	va^le_ri_
 uales	v2spia---	valeo	va^le_s
 vales	v2spia---	valeo	va^le_s
+ualen	v2spia---	valeo	va^le_^n
+valen	v2spia---	valeo	va^le_^n
 ualet	v3spia---	valeo	va^let
 valet	v3spia---	valeo	va^let
 ualete	v2ppma---	valeo	va^le_te
@@ -766748,6 +766984,8 @@ ualuisset	v3slsa---	valeo	va^lu^isset
 valuisset	v3slsa---	valeo	va^lu^isset
 ualuisti	v2sria---	valeo	va^lu^isti_
 valuisti	v2sria---	valeo	va^lu^isti_
+ualuistin	v2sria---	valeo	va^lu^isti_n
+valuistin	v2sria---	valeo	va^lu^isti_n
 ualuistis	v2pria---	valeo	va^lu^istis
 valuistis	v2pria---	valeo	va^lu^istis
 ualuit	v3sria---	valeo	va^lu^it
@@ -779386,6 +779624,8 @@ veneres	n-p---fn-	Venus	Ve^nere_s
 veneres	n-p---fv-	Venus	Ve^nere_s
 ueneri	n-s---fd-	Venus	Ve^neri_
 veneri	n-s---fd-	Venus	Ve^neri_
+uenerin	n-s---fd-	Venus	Ve^neri_n
+venerin	n-s---fd-	Venus	Ve^neri_n
 ueneris	n-s---fg-	Venus	Ve^neris
 veneris	n-s---fg-	Venus	Ve^neris
 uenerum	n-p---fg-	Venus	Ve^nerum
@@ -780496,6 +780736,8 @@ uerbero	n-s---mn-	verbero2	verbe^ro_
 uerbero	n-s---mv-	verbero2	verbe^ro_
 verbero	n-s---mn-	verbero2	verbe^ro_
 verbero	n-s---mv-	verbero2	verbe^ro_
+uerberon	v1spia---	verbero	verbe^ro_n
+verberon	v1spia---	verbero	verbe^ro_n
 uerberone	n-s---mb-	verbero2	verbe^ro_ne
 verberone	n-s---mb-	verbero2	verbe^ro_ne
 uerberonem	n-s---ma-	verbero2	verbe^ro_nem
@@ -785596,6 +785838,8 @@ vero	a-s---mb-	verus	ve_ro_
 vero	a-s---md-	verus	ve_ro_
 vero	a-s---nb-	verus	ve_ro_
 vero	a-s---nd-	verus	ve_ro_
+ueron	d--------	vero	ve_ro_n
+veron	d--------	vero	ve_ro_n
 uerorum	a-p---mg-	verus	ve_ro_rum
 uerorum	a-p---ng-	verus	ve_ro_rum
 verorum	a-p---mg-	verus	ve_ro_rum
@@ -788709,6 +788953,8 @@ uotuero	v1stia---	veto	vo^tuero_
 votuero	v1stia---	veto	vo^tuero_
 uotui	v1sria---	veto	vo^tui_
 votui	v1sria---	veto	vo^tui_
+uotuin	v1sria---	veto	vo^tui_n
+votuin	v1sria---	veto	vo^tui_n
 uotuisti	v2sria---	veto	vo^tuisti_
 votuisti	v2sria---	veto	vo^tuisti_
 uetti	n-s---mg-	Vettius	Vetti_
@@ -792199,6 +792445,8 @@ uidentur	v3ppip---	video	vi^dentur
 videntur	v3ppip---	video	vi^dentur
 uideo	v1spia---	video	vi^deo_
 video	v1spia---	video	vi^deo_
+uideon	v1spia---	video	vi^deo_n
+videon	v1spia---	video	vi^deo_n
 uideor	v1spip---	video	vi^deor
 videor	v1spip---	video	vi^deor
 uideram	v1slia---	video	vi_deram
@@ -792281,14 +792529,16 @@ uiderunt	v3pria---	video	vi_de_runt
 viderunt	v3pria---	video	vi_de_runt
 uides	v2spia---	video	vi^de_s
 vides	v2spia---	video	vi^de_s
-uiden	v2spia---	video	vi^de^n
-viden	v2spia---	video	vi^de^n
+uiden	v2spia---	video	vi^de_^n
+viden	v2spia---	video	vi^de_^n
 uidet	v3spia---	video	vi^det
 videt	v3spia---	video	vi^det
 uidete	v2ppma---	video	vi^de_te
 videte	v2ppma---	video	vi^de_te
 uidetis	v2ppia---	video	vi^de_tis
 videtis	v2ppia---	video	vi^de_tis
+uidetin	v2ppia---	video	vi^de_tin
+videtin	v2ppia---	video	vi^de_tin
 uideto	v2sfma---	video	vi^de_to_
 uideto	v3sfma---	video	vi^de_to_
 videto	v2sfma---	video	vi^de_to_
@@ -792317,6 +792567,8 @@ uidissetis	v2plsa---	video	vi_disse_tis
 vidissetis	v2plsa---	video	vi_disse_tis
 uidisti	v2sria---	video	vi_disti_
 vidisti	v2sria---	video	vi_disti_
+uidistin	v2sria---	video	vi_disti_n
+vidistin	v2sria---	video	vi_disti_n
 uidistis	v2pria---	video	vi_distis
 vidistis	v2pria---	video	vi_distis
 uidit	v3sria---	video	vi_dit
@@ -795617,6 +795869,8 @@ uincitur	v3spip---	vinco	vincitur
 vincitur	v3spip---	vinco	vincitur
 uinco	v1spia---	vinco	vinco_
 vinco	v1spia---	vinco	vinco_
+uincon	v1spia---	vinco	vinco_n
+vincon	v1spia---	vinco	vinco_n
 uincor	v1spip---	vinco	vincor
 vincor	v1spip---	vinco	vincor
 uincunt	v3ppia---	vinco	vincunt
@@ -800837,6 +801091,8 @@ uisui	n-s---md-	visus2	vi_su^i_
 visui	n-s---md-	visus2	vi_su^i_
 uisum	n-s---ma-	visus2	vi_sum
 visum	n-s---ma-	visus2	vi_sum
+uisun	v-srppnn-	video	vi_sun
+visun	v-srppnn-	video	vi_sun
 uisus	n-p---ma-	visus2	vi_su_s
 uisus	n-p---mn-	visus2	vi_su_s
 uisus	n-s---mg-	visus2	vi_su_s
@@ -805559,6 +805815,8 @@ uocetur	v3spsp---	voco	vo^ce_tur
 vocetur	v3spsp---	voco	vo^ce_tur
 uoco	v1spia---	voco	vo^co_
 voco	v1spia---	voco	vo^co_
+uocon	v1spia---	voco	vo^co_^n
+vocon	v1spia---	voco	vo^co_^n
 uocor	v1spip---	voco	vo^cor
 vocor	v1spip---	voco	vo^cor
 uoconi	a-s---mg-	Voconius	Vo^co_ni_
@@ -806289,6 +806547,8 @@ uelletis	v2pisa---	volo	velle_tis
 velletis	v2pisa---	volo	velle_tis
 uis	v2spia---	volo	vi_s
 vis	v2spia---	volo	vi_s
+uin	v2spia---	volo	vi_n
+vin	v2spia---	volo	vi_n
 uolam	v1sfia---	volo	volam
 volam	v1sfia---	volo	volam
 uolebam	v1siia---	volo	vole_bam
