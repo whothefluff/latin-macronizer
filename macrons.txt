@@ -402264,6 +402264,7 @@ ejus	p-s---mg-	is	ejus
 ejus	p-s---ng-	is	ejus
 eo	p-s---mb-	is	eo_
 eo	p-s---nb-	is	eo_
+eon	p-s---mb-	is	eo_^n
 eon	v1spia---	eo	eo_^n
 eorum	p-p---mg-	is	eo_rum
 eorum	p-p---ng-	is	eo_rum
@@ -729069,6 +729070,7 @@ tanto	a-s---mb-	tantus	tanto_
 tanto	a-s---md-	tantus	tanto_
 tanto	a-s---nb-	tantus	tanto_
 tanto	a-s---nd-	tantus	tanto_
+tanton	a-s---mb-	tantus	tanto_n
 tanton	a-s---nb-	tantus	tanto_n
 tantorum	a-p---mg-	tantus	tanto_rum
 tantorum	a-p---ng-	tantus	tanto_rum
