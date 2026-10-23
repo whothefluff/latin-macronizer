@@ -285463,6 +285463,7 @@ facies	n-s---fn-	facies	fa^ci^e_s
 facile	a-s---na-	facilis	fa^ci^le
 facile	a-s---nn-	facilis	fa^ci^le
 facile	a-s---nv-	facilis	fa^ci^le
+facile	d--------	facilis	fa^ci^le
 facilen	d--------	facilis	fa^ci^len
 facilem	a-s---fa-	facilis	fa^ci^lem
 facilem	a-s---ma-	facilis	fa^ci^lem
